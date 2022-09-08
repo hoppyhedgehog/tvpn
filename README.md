@@ -5,8 +5,11 @@ I created this for use on MAC OSX Catalina+, but it could also be used on Linux.
 
 #  PREREQUISITES
 
-## Root user 
+### Root user 
 - TVPN is designed to be run AS ROOT
+
+### VI Shell Wrapper VIB
+- Though this is OPTIONAL, if you are a CLI person it is recommended you try my VI/VIM Editor Shell Wrapper called [VIM](https://github.com/hoppyhedgehog/vib/)
 
 ### Homebrew is required.
 - To install Homebrew and the prerequisites, I have created brew-setup.sh on his repo as well.
@@ -32,7 +35,7 @@ I created this for use on MAC OSX Catalina+, but it could also be used on Linux.
 ### Credentials
 - Your Authentication (typically Active Directory) Userid And Password
 
-#  SHELL ENVIRONMENT
+###  Set the SHELL environment
 
 It is recommended that you 
 - Download mac_shell_environment_wrapper.sh and copy it to /usr/local/bin/
@@ -51,7 +54,8 @@ source /usr/local/bin/mac_shell_environment_wrapper.sh
 . ~/.bashrc
 ```
 
-# Verify (After installing homebrew essentials) that the following resolv to the HomeBrew 'GNU Linux' Tools in /usr/local/bin
+### Verify GNU Tools are installed 
+After installing homebrew essentials) that the following resolv to the HomeBrew 'GNU Linux' Tools in /usr/local/bin
 ```
 # which ls
 /usr/local/bin/ls
@@ -72,7 +76,7 @@ source /usr/local/bin/mac_shell_environment_wrapper.sh
 ```
 
 
-# Verify openconnect is installed
+### Verify openconnect is installed
 ```
 # which openconnect
 /usr/local/bin/openconnect
@@ -131,7 +135,8 @@ cd /etc/vpnc
 vi vpnc-script
 ```
 
-# CREATE DNS (resolv.conf) default and your VPN(custom) Entries
+# CREATE DNS TEMPLATES
+Create the (resolv.conf) default template, and your VPN(custom) Entries
 
 - Copy default resolv.conf to /etc/vpnc/vpnc.resolv.conf.default
 ```
