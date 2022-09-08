@@ -5,11 +5,16 @@ I created this for use on MAC OSX, but it could also be used on Linux.
 
 #  PREREQUISITES
 
+Firstly TVPN is designed to be run AS ROOT
+
 ** For MAC
 
 
 ### Homebrew is required.
 - To install Homebrew and the prerequisites, I have created brew-setup.sh on his repo as well.
+
+### Running brew-setup
+- You can prune homebrew-essentials.txt but it is still highly recommended you run brew-setup as is to setup the correct soft links
 
 ### OpenConnect is required
 - You can install it from [GitHub](https://formulae.brew.sh/formula/openconnect) or use the brew-setup.sh
@@ -20,8 +25,8 @@ I created this for use on MAC OSX, but it could also be used on Linux.
 *Also, the version I used is included in this repo.*
 
 ### ruby is required
-It should be installed in /usr/bin/ruby on your MAC
-*If not see https://www.ruby-lang.org/en/documentation/installation/*
+- ruby should be installed in /usr/bin/ruby on your MAC
+* if not see (https://www.ruby-lang.org/en/documentation/installation/)*
 
 ### VPN Server
 - The IP Address or FQDN of YOUR Company VPN Server
@@ -31,14 +36,105 @@ It should be installed in /usr/bin/ruby on your MAC
 
 #  SHELL ENVIRONMENT
 
-It is recommended that you
+It is recommended that you 
+- Download mac_shell_environment_wrapper.sh and put in /usr/local/bin/
+- Edit $HOME/.bashrc and add
+```
+source /usr/local/bin/mac_shell_environment_wrapper.sh
+```
+
+- Reload your shell environment 
+```
+. ~/.bashrc
+```
+
+- Verify (After installing homebrew essentials) that the following resolv to the HomeBrew 'GNU Linux' Tools in /usr/local/bin
+```
+# which ls
+/usr/local/bin/ls
+# which date
+/usr/local/bin/date
+# which sed
+/usr/local/bin/sed
+# which awk
+/usr/local/bin/awk
+# which find
+/usr/local/bin/find
+# which locate
+/usr/local/bin/locate
+# which stat
+/usr/local/bin/stat
+# which xargs
+/usr/local/bin/xargs
+```
+
+
+- Verify openconnect is installed
+```
+# which openconnect
+/usr/local/bin/openconnect
+```
+
+
+# INSTALLING TVPN
+
+- Copy tvpn to /usr/local/bin
 
 ```
-###########
-USAGE
-###########
+chmod 755 /usr/local/bin/tvpn
+```
+
+- Edit tvpn
+```
+cd /usr/local/bin
+vi tvpn
+```
+
+- Modify the following fields
+```
+COM_AUTHGROUP=
+COM_USER=
+COM_PASSWD=
+COM_DOMAIN=
+INTERFACE=
+```
+* if you do not know the network interface that is active use:
+```
+ifconfig | pcregrep -M -o '^[^\t:]+(?=:([^\n]|\n\t)*status: active)'
+```
+
+# SETUP VPNC
+
+- Create Directory vpnc
+```
+mkdir /etc/vpnc
+```
+
+- Copy-n-paste vpnc-script to /etc/vpnc
+```
+cd /etc/vpnc
+vi vpnc-script
+```
+
+# CREATE DNS (resolv.conf) default and your VPN(custom) Entries
+
+- Copy default resolv.conf to /etc/vpnc/vpnc.resolv.conf.default
+```
+cp /etc/resolv.conf /etc/vpnc/vpnc.resolv.conf.default
+```
+
+- Create your CUSTOM resolv.conf in /etc/vpnc/resolv.conf.custom
+```
+cp /etc/vpnc/vpnc.resolv.conf.custom
+```
+
+
+
+# VIEW TVPN USAGE
+
 
 VIEW SCRIPT USAGE
+```
 	# tvpn -?
 	================================================================
 	>ABOUT:  VPN Script to connect to the vpn-hq.tintri.com VPN
