@@ -1,26 +1,22 @@
 # tvpn
 A VPNC Wrapper Script that allows you to connect to your Cisco VPN
 
-# INSTALLATION EXAMPLE
-```
-$ sudo -s
-# cd $HOME
-# mkdir tmp
-# cd tmp
-# tar -xzvf tvpn_2.0.tgz
-x tvpn_2.0/
-x tvpn_2.0/setup.sh
-x tvpn_2.0/INSTALL
-x tvpn_2.0/etc/
-x tvpn_2.0/tvpn
-x tvpn_2.0/etc/vpnc/
-x tvpn_2.0/etc/vpnc/resolv.conf.tintri
-x tvpn_2.0/etc/vpnc/vpnc-script
-# 
-# cd tvpn_2.0
-# cat INSTALL
+#  PREREQUISITES
+
+** For MAC
+
+
+Homebrew is required.
+To install Homebrew and the prerequisites, I have created brew-setup.sh on his repo as well.
+
+VPNC Script is required:  You may download it from here:
+https://gitlab.com/openconnect/vpnc-scripts/raw/master/vpnc-script
+
+Also, the version I used is included in this repo.
+
+
 ###########
-INSTALLATION INSTRUCTIONS
+USAGE
 ###########
 
 SUDO TO ROOT
