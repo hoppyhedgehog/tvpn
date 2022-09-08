@@ -46,7 +46,7 @@ source /usr/local/bin/mac_shell_environment_wrapper.sh
 . ~/.bashrc
 ```
 
-- Verify (After installing homebrew essentials) that the following resolv to the HomeBrew 'GNU Linux' Tools in /usr/local/bin
+# Verify (After installing homebrew essentials) that the following resolv to the HomeBrew 'GNU Linux' Tools in /usr/local/bin
 ```
 # which ls
 /usr/local/bin/ls
@@ -67,7 +67,7 @@ source /usr/local/bin/mac_shell_environment_wrapper.sh
 ```
 
 
-- Verify openconnect is installed
+# Verify openconnect is installed
 ```
 # which openconnect
 /usr/local/bin/openconnect
