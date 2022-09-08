@@ -1,7 +1,7 @@
 # tvpn
-A VPNC Wrapper Script that allows you to connect to your Cisco VPN.
+A VPNC Wrapper Script that allows you to connect to your Cisco VPN using Openconnect instead of using the Native Cisco Client.
 
-I created this for use on MAC OSX, but it could also be used on Linux.
+I created this for use on MAC OSX Catalina+, but it could also be used on Linux.
 
 #  PREREQUISITES
 
