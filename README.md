@@ -2,7 +2,7 @@
 A VPNC Wrapper Script that allows you to connect to your Cisco VPN
 
 # INSTALLATION EXAMPLE
-
+```
 $ sudo -s
 # cd $HOME
 # mkdir tmp
@@ -43,3 +43,4 @@ VIEW SCRIPT USAGE
 				to verify the current Connection Status
 			-d	Enable Debug
 	================================================================
+```
