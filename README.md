@@ -1,29 +1,34 @@
 # tvpn
-A VPNC Wrapper Script that allows you to connect to your Cisco VPN
+A VPNC Wrapper Script that allows you to connect to your Cisco VPN.
+
+I created this for use on MAC OSX, but it could also be used on Linux.
 
 #  PREREQUISITES
 
 ** For MAC
 
 
-Homebrew is required.
-To install Homebrew and the prerequisites, I have created brew-setup.sh on his repo as well.
+### Homebrew is required.
+- To install Homebrew and the prerequisites, I have created brew-setup.sh on his repo as well.
 
-VPNC Script is required:  You may download it from here:
-https://gitlab.com/openconnect/vpnc-scripts/raw/master/vpnc-script
+### OpenConnect is required
+- You can install it from [GitHub](https://formulae.brew.sh/formula/openconnect) or use the brew-setup.sh
 
-Also, the version I used is included in this repo.
+### VPNC Script is required:  
+- You may [download it from here](https://gitlab.com/openconnect/vpnc-scripts/raw/master/vpnc-script)
+
+*Also, the version I used is included in this repo.*
+
+### VPN Server
+- The IP Address or FQDN of YOUR Company VPN Server
+
+### Credentials
+- Your Authentication (typically Active Directory) Userid And Password
 
 ```
 ###########
 USAGE
 ###########
-
-SUDO TO ROOT
-	# sudo -s
-EXECUTE SETUP
-	# ./setup.sh
-	#
 
 VIEW SCRIPT USAGE
 	# tvpn -?
