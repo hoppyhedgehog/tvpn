@@ -68,7 +68,22 @@ build_brew(){
         done< <(cat $HOMEBREW_FILE)
 }
 ###################################################################
-if [ ! -f /usr/local/bin/brew ]; then
+#Verify GNU Links
+###################################################################
+verify_gnu_links(){
+  writelog "Verifying that the GNU Tools are properly linked in /usr/local/bin"
+  gnu_arr=("ls" "date" "sed" "awk" "find" "locate" "stat")
+  for i in ${gnu_arr[@]}; do
+     if [ -f /usr/local/bin/g${i} ]; then
+        if [ ! -L /usr/local/bin/$i ]; then
+            writelog "Creating Soft Link for /usr/local/bin/g${i} -->  /usr/local/bin/${i}"
+            ln -s /usr/local/bin/g${i}  /usr/local/bin/${i} 
+         fi
+      fi
+   done
+} 
+###################################################################
+if [ ! -f /usr/local/bin/brew ] || [ -f /usr/local/Homebrew/bin/brew ]; then
         echo "HomeBrew Missing! Attempting to install" |tee -a $LOGFILE
         echo "ruby -e \"$(curl -fsSL $HOMEBREW_URL)\"" |tee -a $LOGFILE
         sudo ruby -e "$(curl -fsSL $HOMEBREW_URL)"  |tee -a $LOGFILE
@@ -80,12 +95,12 @@ fi
 
 if [ -f /usr/local/bin/brew ] || [ -f /usr/local/Homebrew/bin/brew ]; then
         build_brew |tee -a $LOGFILE
+        verify_gnu_links
 else
   echo "ERROR: Unable to find HomeBrew in /usr/local/bin/ or /usr/local/Homebrew/bin"
   exit 1
 fi
 ###################################################################
-sleep 1
 ELAPSED=$( date +%s.%N --date="$START_TIME seconds ago")
 writelog "Finished $SCRIPT"
 writelog "Script took [$ELAPSED]s to complete"
