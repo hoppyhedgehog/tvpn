@@ -5,10 +5,8 @@ I created this for use on MAC OSX, but it could also be used on Linux.
 
 #  PREREQUISITES
 
-Firstly TVPN is designed to be run AS ROOT
-
-** For MAC
-
+## Root user 
+- TVPN is designed to be run AS ROOT
 
 ### Homebrew is required.
 - To install Homebrew and the prerequisites, I have created brew-setup.sh on his repo as well.
@@ -101,6 +99,18 @@ INTERFACE=
 * if you do not know the network interface that is active use:
 ```
 ifconfig | pcregrep -M -o '^[^\t:]+(?=:([^\n]|\n\t)*status: active)'
+```
+
+
+[^note]:
+EXAMPLE
+```
+export COM_AUTHGROUP="ACME"      # YOUR AUTH GROUP
+export COM_USER="wcoyote"        # YOUR VPN USER ID
+export COM_PASSWD="Ro@dRunn3r"   # YOUR VPN PASSWORD
+export COM_DOMAIN="ACME"        # YOUR DOMAIN
+export COM_HOST="vpn-hq.acme.com" # YOUR VPN HOST (use IP if DNS doesnt work)
+INTERFACE=en10
 ```
 
 # SETUP VPNC
