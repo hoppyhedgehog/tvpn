@@ -35,8 +35,13 @@ I created this for use on MAC OSX Catalina+, but it could also be used on Linux.
 #  SHELL ENVIRONMENT
 
 It is recommended that you 
-- Download mac_shell_environment_wrapper.sh and put in /usr/local/bin/
-- Edit $HOME/.bashrc and add
+- Download mac_shell_environment_wrapper.sh and copy it to /usr/local/bin/
+- Edit $HOME/.bashrc 
+```
+vi ~/.bashrc
+```
+
+Add the following
 ```
 source /usr/local/bin/mac_shell_environment_wrapper.sh
 ```
