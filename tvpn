@@ -1,10 +1,12 @@
 #!/bin/bash
 ###################################################################
-# CISCO VPN WRAPPER SCRIPT 
-# LOCATION: https://github.com/hoppyhedgehog/tvpn
+# NAME: tvpn
+# LAST_MODIFIED: 2022-09-08T13:16:36
+# DOWNLOAD: https://github.com/hoppyhedgehog/tvpn
+# LOCATION: /usr/local/bin
 # AUTHOR: ben@datastorageguy.com
 ###################################################################
-#LAST_MODIFIED: 2022-09-08T12:35:05
+#LAST_MODIFIED: 2022-09-08T13:09:31
 PS4='${LINENO}: '
 ###################################################################
 VER=3.2
@@ -27,7 +29,12 @@ export COM_AUTHGROUP="ACME"      # YOUR AUTH GROUP
 export COM_USER="wcoyote"        # YOUR VPN USER ID
 export COM_PASSWD="Ro@dRunn3r"   # YOUR VPN PASSWORD
 export COM_DOMAIN="ACME"        # YOUR DOMAIN
-export COM_HOST="vpn-hq.acme.com" # YOUR VPN HOST
+export COM_HOST="vpn-hq.acme.com" # YOUR VPN HOST (use IP if DNS doesnt work)
+###################################################################
+###################################################################
+# SPECIFY YOUR DEFAULT INTERFACE HERE
+###################################################################
+INTERFACE=en10
 ###################################################################
 if [ -z "$COM_USER" ]; then
  echo -e "$LINE\nERROR: No Username Specified for COM_USER in $SCRIPT \n$LINE"
@@ -38,14 +45,6 @@ if [ -z "$COM_PASSWD" ]; then
  exit 1
 fi
 ###################################################################
-# IF DNS DOES NOT RESOLV YOU CAN USE THE FOLLOWING IP
-###################################################################
-#export COM_HOST="104.254.240.230"
-###################################################################
-# SPECIFY YOUR DEFAULT INTERFACE HERE
-###################################################################
-#INTERFACE=eth10
-INTERFACE=en10
 if [ -z $INTERFACE ]; then
   echo $LINE
   echo ">NO ACTIVE ETHERNET/WIFI INTERFACE SPECIFIED"
@@ -89,9 +88,10 @@ fi
 ###################################################################
 MAX_LOGSIZE=25000000 #25M
 ###################################################################
-ACME_RESOLV=/etc/vpnc/resolv.conf.$COM_DOMAIN
-SYSTEM_RESOLV=/etc/resolv.conf
-DEFAULT_RESOLV=/etc/vpnc/resolv.conf.default
+ACME_RESOLV=/private/etc/vpnc/resolv.conf.custom
+SYSTEM_RESOLV=/var/run/resolv.conf
+SOFT_LINK_SYSTEM_RESOLV=/private/etc/resolv.conf
+DEFAULT_RESOLV=/private/etc/vpnc/resolv.conf.default
 ###################################################################
 if [[  ( $USER != "root" ) ]]; then
   echo $LINE
@@ -101,6 +101,11 @@ if [[  ( $USER != "root" ) ]]; then
 fi
 
 ###################################################################
+if [ ! -L $SOFT_LINK_SYSTEM_RESOLV ]; then
+		rm -f $SOFT_LINK_SYSTEM_RESOLV &>/dev/null
+		ln -s $SYSTEM_RESOLV $SOFT_LINK_SYSTEM_RESOLV >/dev/null
+fi
+
 if [ ! -f $DEFAULT_RESOLV ]; then
  cp -pf $SYSTEM_RESOLV $DEFAULT_RESOLV
  cat $SYSTEM_RESOLV|sed  '/^\s*$/d;/\;/d;/^\#/d' >$DEFAULT_RESOLV
