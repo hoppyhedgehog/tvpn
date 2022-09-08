@@ -43,6 +43,7 @@ gts
 guile
 handbrake
 harfbuzz
+htop
 hydra
 icu4c
 imath
