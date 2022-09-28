@@ -98,9 +98,21 @@ chmod 755 /usr/local/bin/tvpn
 # Identify your preferred network interface that is active use:
 ```
 # scutil --nwi|awk 'BEGIN {s=0} $0 ~ /^IPv4/ {s=1;next} s==1 && $0 ~ /flags/ {intf=$1;next} s==1 && $1 ~ /address/ {ip=$NF; print intf,ip} $1 ~ /REACH/{exit}'
-en9 192.168.1.88
-
 ```
+[^note]:
+EXAMPLE OUTPUT (Single Interface)
+```
+en9 192.168.1.88
+```
+
+[^note]:
+EXAMPLE OUTPUT (Multiple Interface)
+```
+en9 192.168.1.88
+en0 192.168.1.13
+```
+
+
 
 # Create Directory vpnc
 ```
