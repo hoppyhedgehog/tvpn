@@ -87,17 +87,27 @@ After installing homebrew essentials) that the following resolv to the HomeBrew 
 
 - Copy tvpn to /usr/local/bin
 
+- Change the permissions to execute (755)
+
 ```
 chmod 755 /usr/local/bin/tvpn
 ```
 
-- Edit tvpn
+
+
+# Identify your preferred network interface that is active use:
 ```
-cd /usr/local/bin
-vi tvpn
+# scutil --nwi|awk 'BEGIN {s=0} $0 ~ /^IPv4/ {s=1;next} s==1 && $0 ~ /flags/ {intf=$1;next} s==1 && $1 ~ /address/ {ip=$NF; print intf,ip} $1 ~ /REACH/{exit}'
+en9 192.168.1.88
+
 ```
 
-- Modify the following fields
+# Create Directory vpnc
+```
+mkdir /etc/vpnc
+```
+
+#  Create file /etc/vpnc/.tvpn-credentials
 ```
 COM_AUTHGROUP=
 COM_USER=
@@ -105,29 +115,28 @@ COM_PASSWD=
 COM_DOMAIN=
 INTERFACE=
 ```
-* if you do not know the network interface that is active use:
-```
-ifconfig | pcregrep -M -o '^[^\t:]+(?=:([^\n]|\n\t)*status: active)'
-```
-
 
 [^note]:
 EXAMPLE
 ```
-export COM_AUTHGROUP="ACME"      # YOUR AUTH GROUP
-export COM_USER="wcoyote"        # YOUR VPN USER ID
-export COM_PASSWD="Ro@dRunn3r"   # YOUR VPN PASSWORD
-export COM_DOMAIN="ACME"        # YOUR DOMAIN
-export COM_HOST="vpn-hq.acme.com" # YOUR VPN HOST (use IP if DNS doesnt work)
+# cat /etc/vpnc/.tvpn-credentials
+# CREDENTIALS FILE FOR TVPN SCRIPT
+# YOUR VPN AUTH GROUP
+export COM_AUTHGROUP="ACME"
+# YOUR VPN USER ID
+export COM_USER="wcoyote"
+# YOUR VPN PASSWORD (enclose in single quotes!)
+export COM_PASSWD='Ro@dRunn3r'
+# YOUR VPN DOMAIN
+export COM_DOMAIN="ACME"
+# YOUR VPN HOST NAME OR IP ADDRESS
+export COM_HOST="vpn-hq.acme.com"
+# YOUR PRIMARY ACTIVE INTERFACE
 INTERFACE=en10
 ```
 
 # SETUP VPNC
 
-- Create Directory vpnc
-```
-mkdir /etc/vpnc
-```
 
 - Copy-n-paste vpnc-script to /etc/vpnc
 ```
@@ -157,15 +166,18 @@ VIEW SCRIPT USAGE
 ```
 	# tvpn -?
 	================================================================
-	>ABOUT:  VPN Script to connect to the vpn-hq.tintri.com VPN
+	>[tvpn]:  VPN Script to connect to the TINTRI VPN [version 3.2]
 	================================================================
 	>usage
-		#tvpn [start|stop|status|-s|-d]
-			start 	Initialize connection to vpn-hq.tintri.com VPN
-			stop	Close connection to vpn-hq.tintri.com VPN
-			status	View the current VPN Connection Status
-			-s	Tail the current /Users/bpatridge/logs/tvpn.202205.log
+		#tvpn [start|stop|status|-s|-d|-r|-v]
+			start   Initialize connection to vpn-hq.tintri.com VPN
+			stop    Close connection to vpn-hq.tintri.com VPN
+			status  View the current VPN Connection Status
+			-s      Tail the current /Users/bpatridge/logs/tvpn.202209.log
 				to verify the current Connection Status
-			-d	Enable Debug
+			-d      Enable Debug
+			-r      Reset Network and Routing
+			-v      Version info
 	================================================================
+
 ```
