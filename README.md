@@ -91,6 +91,15 @@ After installing homebrew essentials) that the following resolv to the HomeBrew 
 /usr/local/bin/openconnect
 ```
 
+Verify Version
+```
+# openconnect --version
+OpenConnect version v9.01
+Using GnuTLS 3.7.7. Features present: PKCS#11, RSA software token, HOTP software token, TOTP software token, Yubikey OATH, System keys, DTLS, ESP
+Supported protocols: anyconnect (default), nc, gp, pulse, f5, fortinet, array
+Default vpnc-script (override with --script): /usr/local/etc/vpnc/vpnc-script
+```
+
 
 # Installing TVPN Script
 
