@@ -103,12 +103,12 @@ Default vpnc-script (override with --script): /usr/local/etc/vpnc/vpnc-script
 
 # Installing TVPN Script
 
-- Copy tvpn to /usr/local/bin
+- Download tvpn and copy it to /usr/local/bin
+
 - Verify you copied it as a text file
 ```
 # file /usr/local/bin/tvpn
 /usr/local/bin/tvpn: Bourne-Again shell script text executable, ASCII text
-[20220928.144352][~/scripts]
 ```
 
 - Change the permissions to execute (755)
@@ -117,6 +117,15 @@ Default vpnc-script (override with --script): /usr/local/etc/vpnc/vpnc-script
 # chmod 755 /usr/local/bin/tvpn
 ```
 
+Verify /usr/local/bin is in your path
+```
+# echo $PATH|grep local
+/usr/local/bin:/usr/local/sbin:/root/perl5/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/var/lib/snapd/snap/bin:/root:/root/scripts:/root/bin:/root/local/bin:/bin:/sbin:/root/bin
+```
+If not, set the path
+```
+export PATH=/usr/local/bin:$PATH
+```
 
 
 # Identify your preferred network interface that is active use:
