@@ -162,7 +162,8 @@ en0 192.168.1.13
 mkdir /etc/vpnc
 ```
 
-#  Create file /etc/vpnc/.tvpn-credentials
+#  Create text file /etc/vpnc/.tvpn-credentials
+Add your credentials based on the following variables
 ```
 COM_AUTHGROUP=
 COM_USER=
@@ -172,20 +173,19 @@ INTERFACE=
 ```
 
 [^note]:
-EXAMPLE
+EXAMPLE /etc/vpnc/.tvpn-credentials
 ```
-# cat /etc/vpnc/.tvpn-credentials
 # CREDENTIALS FILE FOR TVPN SCRIPT
 # YOUR VPN AUTH GROUP
-export COM_AUTHGROUP="ACME"
+COM_AUTHGROUP="ACME"
 # YOUR VPN USER ID
-export COM_USER="wcoyote"
+COM_USER="wcoyote"
 # YOUR VPN PASSWORD (enclose in single quotes!)
-export COM_PASSWD='Ro@dRunn3r'
+COM_PASSWD='Ro@dRunn3r'
 # YOUR VPN DOMAIN
-export COM_DOMAIN="ACME"
+COM_DOMAIN="ACME"
 # YOUR VPN HOST NAME OR IP ADDRESS
-export COM_HOST="vpn-hq.acme.com"
+COM_HOST="vpn-hq.acme.com"
 # YOUR PRIMARY ACTIVE INTERFACE
 INTERFACE=en10
 ```
@@ -193,7 +193,7 @@ INTERFACE=en10
 # Copy VPNC Script to /etc/vpnc
 
 
-- Download and copy vpnc to /etc/vpnc
+- Download and copy vpnc-script to /etc/vpnc/
 - Verify
 ```
 # file /etc/vpnc/vpnc-script
