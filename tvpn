@@ -1,15 +1,12 @@
 #!/bin/bash
-###################################################################
 # NAME: tvpn
-# LAST_MODIFIED: 2022-09-08T13:16:36
 # DOWNLOAD: https://github.com/hoppyhedgehog/tvpn
 # LOCATION: /usr/local/bin
 # AUTHOR: ben@datastorageguy.com
 ###################################################################
-#LAST_MODIFIED: 2022-09-08T13:09:31
 PS4='${LINENO}: '
 ###################################################################
-VER=3.2
+VERSION=3.3
 SCRIPT=$(basename ${BASH_SOURCE[0]})
 LD=$(date '+%Y%m')
 LOGDATE=$(date '+%Y%m%d.%H%M%S')
@@ -23,18 +20,19 @@ THICK_LINE="###################################################################"
 PIDFILE=/var/run/$SCRIPT.pid
 HOSTNAME=$(hostname)
 ###################################################################
-# SPECIFY YOUR ACME VPN USERID AND PASSWORD HERE
+# TVPN CREDENTIALS FILE
 ###################################################################
-export COM_AUTHGROUP="ACME"      # YOUR AUTH GROUP
-export COM_USER="wcoyote"        # YOUR VPN USER ID
-export COM_PASSWD="Ro@dRunn3r"   # YOUR VPN PASSWORD
-export COM_DOMAIN="ACME"        # YOUR DOMAIN
-export COM_HOST="vpn-hq.acme.com" # YOUR VPN HOST (use IP if DNS doesnt work)
+CREDENTIALS=/etc/vpnc/.tvpn-credentials
 ###################################################################
+# CHECK FOR CREDENTIALS FILE
 ###################################################################
-# SPECIFY YOUR DEFAULT INTERFACE HERE
+if [ ! -f $CREDENTIALS ]; then
+	echo "ERROR. $SCRIPT Credentials File: $CREDENTIALS Not Found!"
+	exit 1
+fi
 ###################################################################
-INTERFACE=en10
+source $CREDENTIALS
+###################################################################
 ###################################################################
 if [ -z "$COM_USER" ]; then
  echo -e "$LINE\nERROR: No Username Specified for COM_USER in $SCRIPT \n$LINE"
@@ -237,21 +235,23 @@ checklog(){
 }
 ###################################################################
 usage() {
-  echo $LINE
-  echo ">ABOUT:  VPN Script to connect to the $COM_DOMAIN VPN"
-  echo $LINE
-  echo ">usage"
-  echo " #$SCRIPT [start|stop|status|-s|-d|-r]"
-  echo "  start  Initialize connection to $COM_HOST VPN"
-  echo "  stop Close connection to $COM_HOST VPN"
-  echo "  status View the current VPN Connection Status"
-  echo "  -s Tail the current $LOGFILE"
-  echo "   to verify the current Connection Status"
-  echo "  -d Enable Debug"
-  echo "  -r Reset Network and Routing"
-  echo $LINE
-  exit
+                echo $LINE
+                echo ">[$SCRIPT]:  VPN Script to connect to the $COM_NAME VPN [version $VERSION]"
+                echo $LINE
+                echo ">usage"
+                echo "  #$SCRIPT [start|stop|status|-s|-d|-r|-v]"
+                echo "          start   Initialize connection to $COM_HOST VPN"
+                echo "          stop    Close connection to $COM_HOST VPN"
+                echo "          status  View the current VPN Connection Status"
+                echo "          -s      Tail the current $LOGFILE"
+                echo "                  to verify the current Connection Status"
+                echo "          -d      Enable Debug"
+                echo "          -r      Reset Network and Routing"
+                echo "          -v      Version info"
+                echo $LINE
+                exit
 }
+
 ###################################################################
 ###################################################################
 start_openconnect(){
@@ -491,17 +491,19 @@ if [ $# == 0 ]; then
 fi
 checklog
 for arg in "$@" ; do
- case "$arg" in
-  start) start=1;;
-  stop) stop=1;;
-  status) status=1;;
-  "-s"|"-t"|t|ta|tai|tail) vtail=1;;
-  "-d"|"-v")  debug=1;;
-  "-r")  reset_routing;rr=1;;
-  "test") test=1; start=1;;
-  *) usage;;
- esac
+        case "$arg" in
+                start)  start=1;;
+                stop)   stop=1;;
+                status) status=1;;
+                "-s"|"-t"|t|ta|tai|tail) vtail=1;;
+                "-d")  debug=1;;
+                "-r")  reset_routing;rr=1;;
+                "test") test=1; start=1;;
+                "-v") echo "$SCRIPT v$VERSION";exit 0;;
+                *) usage;;
+        esac
 done
+
 
 if [ ! -z $start ] && [ ! -z $stop ]; then
   echo "ERROR: Cannot use 'start' and 'stop' you IdJut!"
