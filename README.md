@@ -53,9 +53,6 @@ $ ./brew-install.sh -t
 
 *Also, the version I used is included in this repo.*
 
-### ruby is required
-- ruby should be installed in /usr/bin/ruby on your MAC
-* if not see (https://www.ruby-lang.org/en/documentation/installation/)*
 
 ### VPN Server
 - The IP Address or FQDN of YOUR Company VPN Server
