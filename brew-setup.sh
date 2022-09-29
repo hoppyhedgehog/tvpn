@@ -80,6 +80,7 @@ HOMEBREW_ESSENTIALS=(
         "gnutls"
         "gobject-introspection"
         "googler"
+	"gnu-sed"
         "graphite2"
         "grep"
         "grpc"
