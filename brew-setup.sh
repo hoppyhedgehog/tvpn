@@ -3,7 +3,7 @@
 #LAST_MODIFIED: 2022-09-26T16:32:39
 ###################################################################
 PS4='${LINENO}: '
-VERSION=2.2
+VERSION=2.3
 ###################################################################
 SCRIPT=$(basename ${BASH_SOURCE[0]})
 UBIN=/usr/local/bin
@@ -266,7 +266,7 @@ check_gnutools(){
 	done
 }
 ##################################################################
-fix_dirperms() {
+fixdirperms() {
         writelog "Issuing  #sudo chown -R $(whoami) /usr/local/share/zsh /usr/local/share/zsh/site-functions" |tee -a $LOGFILE
         sudo chown -R $(whoami) /usr/local/share/zsh /usr/local/share/zsh/site-functions
         check_gnutools
@@ -279,7 +279,6 @@ brew_install() {
 }
 ##################################################################
 build_brew() {
-	exit
 	local brewline=
 	local n=1
 	for brewtool in ${HOMEBREW_ESSENTIALS[@]}; do	
@@ -357,8 +356,8 @@ check_root
 if [  -z $check ] && [ ! -z $do_install ]; then
 	if [ ! -z $do_install ] && [  -z $nobrew ] && [ -z $noruby ]; then
 		writelog "Attempting to install Homebrew"
-		writelog "ruby -e \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)\"" |tee -a $LOGFILE
-		ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" |tee -a $LOGFILE
+		writelog "ruby -e \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"" |tee -a $LOGFILE
+		ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" |tee -a $LOGFILE
 	else
 		exit 1
 	fi
