@@ -3,7 +3,7 @@
 #LAST_MODIFIED: 2022-09-26T16:32:39
 ###################################################################
 PS4='${LINENO}: '
-VERSION=2.3
+VERSION=2.4
 ###################################################################
 SCRIPT=$(basename ${BASH_SOURCE[0]})
 UBIN=/usr/local/bin
@@ -337,12 +337,6 @@ if [ ! -z $check ] || [ ! -z $do_install ] || [ ! -z $tools_only ]; then
 		writelog "HomeBrew was not found."  |tee -a $LOGFILE
 		nobrew=1
 	fi
-	if [ $(which ruby) ]; then
-		writelog "Ruby found: $(which ruby)"
-	else
-		writelog "ERROR: Unable to find ruby"|tee -a $LOGFILE
-		noruby=1
-	fi
 	if [ $(which curl) ]; then
 		writelog "Curl Found $(which curl)"
 	else
@@ -354,10 +348,10 @@ fi
 check_root 
 
 if [  -z $check ] && [ ! -z $do_install ]; then
-	if [ ! -z $do_install ] && [  -z $nobrew ] && [ -z $noruby ]; then
+	if [ ! -z $do_install ] && [  -z $nobrew ]; then
 		writelog "Attempting to install Homebrew"
-		writelog "ruby -e \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"" |tee -a $LOGFILE
-		ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" |tee -a $LOGFILE
+		writelog "/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"" |tee -a $LOGFILE
+		/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" |tee -a $LOGFILE
 	else
 		exit 1
 	fi
