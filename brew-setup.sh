@@ -270,8 +270,6 @@ check_gnutools(){
 fixdirperms() {
         writelog "Issuing  #sudo chown -R $(whoami) /usr/local/share/zsh /usr/local/share/zsh/site-functions" |tee -a $LOGFILE
         sudo chown -R $(whoami) /usr/local/share/zsh /usr/local/share/zsh/site-functions
-        check_gnutools
-
 }
 ##################################################################
 brew_install() {
