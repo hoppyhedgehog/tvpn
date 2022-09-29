@@ -61,7 +61,7 @@ The prompt will change and look similar to
 [86][root@benmacbook]#
 ```
 
-## VERIFICATIONS
+# RECOMMENDATIONS
 
 ### Verify GNU Tools are installed 
 After installing homebrew essentials) that the following resolv to the HomeBrew 'GNU Linux' Tools in /usr/local/bin
@@ -100,6 +100,28 @@ Supported protocols: anyconnect (default), nc, gp, pulse, f5, fortinet, array
 Default vpnc-script (override with --script): /usr/local/etc/vpnc/vpnc-script
 ```
 
+### Disable SIP on the MAC
+If you are a HomeBrew CLI user you will find System Integrity Protection (SIP) Makes most CLI operations impossible.
+Therefore I always recommend turning it off.
+```
+To verify SIP:
+
+# csrutil status
+System Integrity Protection status: enabled.
+
+1) Disable SIP on Mac:
+
+a) Reboot the Mac and hold down Command + R keys simultaneously after you hear the startup chime, this will boot OS X into Recovery Mode
+
+b) When the "OS X Utilities" screen appears, pull down the 'Utilities' menu at the top of the screen instead, and choose "Terminal"
+
+c) Type the following command into the terminal then hit return:
+
+# csrutil disable; reboot
+
+d) You will see a message saying that System Integrity Protection has been disabled and the Mac needs to restart for changes to take effect, and the Mac will then reboot itself automatically, just let it boot up as normal
+
+```
 
 # Installing TVPN Script
 
