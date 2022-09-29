@@ -1,4 +1,5 @@
 #!/bin/bash
+###################################################################
 # NAME: tvpn
 # DOWNLOAD: https://github.com/hoppyhedgehog/tvpn
 # LOCATION: /usr/local/bin
@@ -6,7 +7,9 @@
 ###################################################################
 PS4='${LINENO}: '
 ###################################################################
-VERSION=3.3
+# MAIN VARIABLES
+###################################################################
+VERSION=4.0
 SCRIPT=$(basename ${BASH_SOURCE[0]})
 LD=$(date '+%Y%m')
 LOGDATE=$(date '+%Y%m%d.%H%M%S')
@@ -15,16 +18,15 @@ DATETIME=$(date '+%Y%m%dT%H%M%S')
 LOGDIR="$HOME/logs"
 WAITLOG="$LOGDIR/${SCRIPT}.${LD}.wait"
 LOGFILE="$LOGDIR/${SCRIPT}.${LD}.log"
-LINE="================================================================"
-THICK_LINE="###################################################################"
 PIDFILE=/var/run/$SCRIPT.pid
-HOSTNAME=$(hostname)
+MAX_LOGSIZE=25000000 #25M
+LINE="================================================================"
 ###################################################################
-# TVPN CREDENTIALS FILE
+# TVPN ACCESS CREDENTIALS FILE
 ###################################################################
 CREDENTIALS=/etc/vpnc/.tvpn-credentials
 ###################################################################
-# CHECK FOR CREDENTIALS FILE
+# CHECK FOR EXISTENCE OF CREDENTIALS FILE
 ###################################################################
 if [ ! -f $CREDENTIALS ]; then
 	echo "ERROR. $SCRIPT Credentials File: $CREDENTIALS Not Found!"
@@ -33,6 +35,7 @@ fi
 ###################################################################
 source $CREDENTIALS
 ###################################################################
+# VERIFY CREDENTIALS EXIST
 ###################################################################
 if [ -z "$COM_USER" ]; then
  echo -e "$LINE\nERROR: No Username Specified for COM_USER in $SCRIPT \n$LINE"
@@ -68,6 +71,8 @@ if [ ! -f $OPENC ]; then
   exit 1
 fi
 ###################################################################
+# COLORS
+###################################################################
 RED='\033[0;31m'
 NORMAL='\033[0m' # No Color
 GREEN='\033[0;32m'
@@ -78,13 +83,6 @@ MAGENTA='\033[0;35m'
 ###################################################################
 VPN_SCRIPT=/etc/vpnc/vpnc-script
 export INTERNAL_IP4_DNS=
-###################################################################
-PASSFILE=$HOME/.ocpass
-if [ ! -f $PASSFILE ]; then
- echo $COM_PASS>$PASSFILE
-fi
-###################################################################
-MAX_LOGSIZE=25000000 #25M
 ###################################################################
 ACME_RESOLV=/private/etc/vpnc/resolv.conf.custom
 SYSTEM_RESOLV=/var/run/resolv.conf
@@ -137,12 +135,12 @@ checklog() {
 ###################################################################
 gd() {
  REAL_DATETIME=$(date '+%Y-%m-%dT%H:%M:%S')
-        dtc="${GREEN}[$REAL_DATETIME]${NORMAL} ${CYAN}$HOSTNAME${NORMAL}"
-        dt="[$REAL_DATETIME] $HOSTNAME"
+        dtc="${GREEN}[$REAL_DATETIME]${NORMAL} ${CYAN}$(hostname)${NORMAL}"
+	dt="[$REAL_DATETIME] $(hostname)"
 }
 ###################################################################
 writelogo () {
- checklog
+ 	checklog
         THINLINE="-----------------------------------------------------------"
         gd
         local e=""
@@ -151,15 +149,15 @@ writelogo () {
 }
 ###################################################################
 writelog () {
- checklog
+	checklog
         THINLINE="-----------------------------------------------------------"
         gd
         local e=""
         local comment="$1"
         echo -e "$dtc $comment"
- if [ -z "$2" ]; then
-         (echo -e "$dt $comment" >>$LOGFILE 2>&1 )
- fi
+	 if [ -z "$2" ]; then
+		 (echo -e "$dt $comment" >>$LOGFILE 2>&1 )
+	 fi
 }
 ###################################################################
 reset_all_routing() {
@@ -279,11 +277,9 @@ fi
 EOF
 cat << 'EOF' >>/tmp/tvpn.openconnect.daemon
 #--------------------------------------------------
-HOSTNAME=$(hostname)
-#--------------------------------------------------
 gd() {
         REAL_DATETIME=`date '+%Y-%m-%dT%H:%M:%S'`
-        dt="[$REAL_DATETIME] $HOSTNAME"
+	dt="[$REAL_DATETIME] $(hostname)"
 }
 #--------------------------------------------------
 echo "Connecting VPN to $COM_DOMAIN" >>$LOGFILE
@@ -323,11 +319,9 @@ EOF
 
 cat << 'EOF' >>/tmp/tvpn.daemon
 #--------------------------------------------------
-HOSTNAME=$(hostname)
-#--------------------------------------------------
 gd() {
         REAL_DATETIME=`date '+%Y-%m-%dT%H:%M:%S'`
-        dt="[$REAL_DATETIME] $HOSTNAME"
+	dt="[$REAL_DATETIME] $(hostname)"
 }
 #--------------------------------------------------
 pingtest() {
@@ -385,7 +379,7 @@ start_vpn() {
  if [ ! -z $test ]; then
   echo -e "PASSWD: $COM_PASSWD |$COMMAND"
  else
-  echo $THICK_LINE >> $LOGFILE
+  echo $LINE >> $LOGFILE
   writelog "Initiating connection to VPN to $COM_DOMAIN"
   start_openconnect
   sleep .3
