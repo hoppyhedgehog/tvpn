@@ -11,7 +11,7 @@ LINE="===================================================="
 RESULTS_DIR=/tmp/$(echo $SCRIPT|cut -d\. -f1)_data
 LOGDATE="$(date '+%Y-%m-%d_%H%M%S')"
 LOGFILE=/tmp/$(echo $SCRIPT|cut -d\. -f1).$LOGDATE.log
-HOMEBREW_URL="https://raw.githubusercontent.com/Homebrew/install/master/install"
+HOMEBREW_INSTALL_URL="https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
 ###################################################################
 if [ ! -d $RESULTS_DIR ]; then
 	mkdir -p $RESULTS_DIR &>/dev/null
@@ -350,8 +350,8 @@ check_root
 if [  -z $check ] && [ ! -z $do_install ]; then
 	if [ ! -z $do_install ] && [  -z $nobrew ]; then
 		writelog "Attempting to install Homebrew"
-		writelog "/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"" |tee -a $LOGFILE
-		/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" |tee -a $LOGFILE
+		writelog "/bin/bash -c \"$(curl -fsSL $HOMEBREW_INSTALL_URL)\"" |tee -a $LOGFILE
+		/bin/bash -c "$(curl -fsSL $HOMEBREW_INSTALL_URL)" |tee -a $LOGFILE
 	else
 		exit 1
 	fi
