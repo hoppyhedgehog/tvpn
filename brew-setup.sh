@@ -315,32 +315,32 @@ while getopts 'clitvh' OPT_NAME; do
 	case $OPT_NAME in
 		("h"|\?)
 			usage;;
-		("t")	tonly=1;;
+		("t")	tools_only=1;;
 		("c")	check=1;;
 		("l")	list_tools;exit;;
-		("i")	doinstall=1;;
+		("i")	do_install=1;;
 		("v")	echo "$SCRIPT version $VERSION";exit 0;;
 	esac
 done
-if [ -z $tonly ] && [ -z $check ] && [ -z $doinstall ]; then
+if [ -z $tools_only ] && [ -z $check ] && [ -z $do_install ]; then
 	usage
 fi
 ##################################################################
 
 rm -f $LOGFILE 2>/dev/null 
 
-if [ ! -z $check ] || [ ! -z $doinstall ] || [ ! -z $tonly ]; then
+if [ ! -z $check ] || [ ! -z $do_install ] || [ ! -z $tools_only ]; then
 	if [ $(which brew) ]; then
 		writelog "HomeBrew found: $(which brew)"
 	else
 		writelog "HomeBrew was not found."  |tee -a $LOGFILE
-		nb=1
+		nobrew=1
 	fi
 	if [ $(which ruby) ]; then
 		writelog "Ruby found: $(which ruby)"
 	else
 		writelog "ERROR: Unable to find ruby"|tee -a $LOGFILE
-		nr=1
+		noruby=1
 	fi
 	if [ $(which curl) ]; then
 		writelog "Curl Found $(which curl)"
@@ -352,8 +352,8 @@ fi
 
 check_root 
 
-if [  -z $check ] && [ ! -z $doinstall ]; then
-	if [ ! -z $doinstall ] && [ ! -z $nb ] && [ -z $nr ]; then
+if [  -z $check ] && [ ! -z $do_install ]; then
+	if [ ! -z $do_install ] && [ ! -z $nobrew ] && [ -z $noruby ]; then
 		writelog "Attempting to install Homebrew"
 		writelog "ruby -e \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)\"" |tee -a $LOGFILE
 		ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" |tee -a $LOGFILE
@@ -363,8 +363,8 @@ if [  -z $check ] && [ ! -z $doinstall ]; then
 
 fi
 
-if [ ! -z $doinstall ] || [ ! -z $tonly ]; then
-	if [[ (  -z $nb ) &&  ( $(which brew) ) ]]; then
+if [ ! -z $do_install ] || [ ! -z $tools_only ]; then
+	if [[ (  -z $nobrew ) &&  ( $(which brew) ) ]]; then
 		build_brew |tee -a $LOGFILE
 		fixdirperms
 		check_gnutools
