@@ -22,13 +22,15 @@ I created this for use on MAC OSX Monterey (12.6)+, but it could also be used on
 ```
 $ chmod 755 brew-setup.sh
 $ ./brew-setup.sh 
+===================================================
+VERSION: 2.5
 ====================================================
-VERSION: 2.4
-====================================================
-brew-setup.sh [-c|-l|-i|-t|-h/?|v]
+brew-setup.sh [-c|-g|-G|-l|-i|-t|-h/?|v]
 	-c	Check to see if HomeBrew Exists
 	-i	Install HomeBrew and Tools
 	-l	List HomeBrew Tools to be installed
+	-g	Re-check gnu-tools (done during install)
+	-G	Manually correct gnu-tool links (if they need to be rechecked)
 	-t	Install HomeBrew Tools ONLY
 	-v	Show brew-setup.sh Version
 ====================================================
