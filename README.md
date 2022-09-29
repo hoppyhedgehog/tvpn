@@ -13,7 +13,7 @@ I created this for use on MAC OSX Monterey (12.6)+, but it could also be used on
 
 
 ### VPNC Script is required. 
-- It is included in /etc/vpnc 
+- It is included in this repo
 - OR you may [download it from here](https://gitlab.com/openconnect/vpnc-scripts/raw/master/vpnc-script)
 
 ### OpenConnect is required
