@@ -75,6 +75,7 @@ HOMEBREW_ESSENTIALS=(
         "gmp"
         "gnu-getopt"
         "gnu-indent"
+	"gnu-sed"
         "gnu-tar"
         "gnu-which"
         "gnutls"
