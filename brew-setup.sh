@@ -3,7 +3,7 @@
 #LAST_MODIFIED: 2022-09-26T16:32:39
 ###################################################################
 PS4='${LINENO}: '
-VERSION=2.0
+VERSION=2.1
 ###################################################################
 SCRIPT=$(basename ${BASH_SOURCE[0]})
 UBIN=/usr/local/bin
@@ -23,7 +23,7 @@ writelog() {
 ###################################################################
 check_root(){
 	if [ $USER == "root" ]; then
-		writelog "ERROR: You cannot install HomeBrew as aroot user"
+		writelog "ERROR: You cannot install HomeBrew as a root user"
 		exit 1
 	fi
 }
@@ -330,17 +330,23 @@ fi
 rm -f $LOGFILE 2>/dev/null 
 
 if [ ! -z $check ] || [ ! -z $doinstall ] || [ ! -z $tonly ]; then
-	if [ ! -f /usr/local/Homebrew/bin/brew ] || [ ! -f /usr/local/bin/brew ] || [ $(brew --version 2>/dev/null|grep -q version; echo $?) != 0 ]; then
-		writelog "HomeBrew missing and not found in /usr/local/brew or/usr/local/Homebrew/bin/brew"  |tee -a $LOGFILE
-		nb=1
-	elif [ ! -z $check ]; then
+	if [ $(which brew) ]; then
 		writelog "HomeBrew found: $(which brew)"
+	else
+		writelog "HomeBrew was not found."  |tee -a $LOGFILE
+		nb=1
 	fi
-	if [ ! -f /usr/bin/ruby ] || [ ! -f /usr/local/bin/ruby ]; then
+	if [ $(which ruby) ]; then
+		writelog "Ruby found: $(which ruby)"
+	else
 		writelog "ERROR: Unable to find ruby"|tee -a $LOGFILE
 		nr=1
-	elif [ ! -z $check ]; then
-		writelog "Ruby found: $(which ruby)"
+	fi
+	if [ $(which curl) ]; then
+		writelog "Curl Found $(which curl)"
+	else
+		writelog "ERROR: curl not found."
+		exit 1
 	fi
 fi
 
@@ -358,7 +364,7 @@ if [  -z $check ] && [ ! -z $doinstall ]; then
 fi
 
 if [ ! -z $doinstall ] || [ ! -z $tonly ]; then
-	if [[ (  -z $nb ) &&  (( -f /usr/local/bin/brew  ) || ( -f /usr/localHomebrew/bin/brew ) ) ]]; then
+	if [[ (  -z $nb ) &&  ( $(which brew) ) ]]; then
 		build_brew |tee -a $LOGFILE
 		fixdirperms
 		check_gnutools
