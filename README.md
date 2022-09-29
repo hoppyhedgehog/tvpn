@@ -128,7 +128,7 @@ export PATH=/usr/local/bin:$PATH
 ```
 
 
-# Identify your preferred network interface that is active use:
+# Identify your preferred ACTIVE network interface:
 
 - MAC OSX
 ```
