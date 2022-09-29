@@ -3,13 +3,14 @@
 #LAST_MODIFIED: 2022-09-26T16:32:39
 ###################################################################
 PS4='${LINENO}: '
-VERSION=2.1
+VERSION=2.2
 ###################################################################
 SCRIPT=$(basename ${BASH_SOURCE[0]})
 UBIN=/usr/local/bin
 LINE="===================================================="
 RESULTS_DIR=/tmp/$(echo $SCRIPT|cut -d\. -f1)_data
-LOGFILE=$RESULTS_DIR/$(echo $SCRIPT|cut -d\. -f1).log
+LOGDATE="$(date '+%Y-%m-%d_%H%M%S')"
+LOGFILE=/tmp/$(echo $SCRIPT|cut -d\. -f1).$LOGDATE.log
 HOMEBREW_URL="https://raw.githubusercontent.com/Homebrew/install/master/install"
 ###################################################################
 if [ ! -d $RESULTS_DIR ]; then
@@ -17,7 +18,7 @@ if [ ! -d $RESULTS_DIR ]; then
 fi
 ###################################################################
 writelog() {
-        DATETIME="[$(date '+%Y-%m-%d_%H:%M:%S')]"
+        DATETIME="[$(date '+%Y-%m-%dT%H:%M:%S')]"
         echo -e "$DATETIME $1" |tee -a $LOGFILE
 }
 ###################################################################
@@ -278,6 +279,7 @@ brew_install() {
 }
 ##################################################################
 build_brew() {
+	exit
 	local brewline=
 	local n=1
 	for brewtool in ${HOMEBREW_ESSENTIALS[@]}; do	
@@ -353,7 +355,7 @@ fi
 check_root 
 
 if [  -z $check ] && [ ! -z $do_install ]; then
-	if [ ! -z $do_install ] && [ ! -z $nobrew ] && [ -z $noruby ]; then
+	if [ ! -z $do_install ] && [  -z $nobrew ] && [ -z $noruby ]; then
 		writelog "Attempting to install Homebrew"
 		writelog "ruby -e \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)\"" |tee -a $LOGFILE
 		ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" |tee -a $LOGFILE
@@ -364,7 +366,7 @@ if [  -z $check ] && [ ! -z $do_install ]; then
 fi
 
 if [ ! -z $do_install ] || [ ! -z $tools_only ]; then
-	if [[ (  -z $nobrew ) &&  ( $(which brew) ) ]]; then
+	if [[ ( -z $nobrew ) &&  ( $(which brew) ) ]]; then
 		build_brew |tee -a $LOGFILE
 		fixdirperms
 		check_gnutools
