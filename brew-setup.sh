@@ -3,7 +3,7 @@
 #LAST_MODIFIED: 2022-09-26T16:32:39
 ###################################################################
 PS4='${LINENO}: '
-VERSION=2.4
+VERSION=2.5
 ###################################################################
 SCRIPT=$(basename ${BASH_SOURCE[0]})
 UBIN=/usr/local/bin
@@ -11,7 +11,7 @@ LINE="===================================================="
 RESULTS_DIR=/tmp/$(echo $SCRIPT|cut -d\. -f1)_data
 LOGDATE="$(date '+%Y-%m-%d_%H%M%S')"
 LOGFILE=/tmp/$(echo $SCRIPT|cut -d\. -f1).$LOGDATE.log
-HOMEBREW_INSTALL_URL="https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
+HOMEBREW_URL="https://raw.githubusercontent.com/Homebrew/install/master/install"
 ###################################################################
 if [ ! -d $RESULTS_DIR ]; then
 	mkdir -p $RESULTS_DIR &>/dev/null
@@ -80,7 +80,6 @@ HOMEBREW_ESSENTIALS=(
         "gnutls"
         "gobject-introspection"
         "googler"
-	"gnu-sed"
         "graphite2"
         "grep"
         "grpc"
@@ -197,7 +196,7 @@ HOMEBREW_ESSENTIALS=(
 # LIST OF HOMEBREW GNU TOOLS TO ALIAS TO ACTUAL TOOLS IN
 # /usr/local/bin
 ##################################################################
-GUN_TOOLS=(
+GNU_TOOLS=(
 	"awk" 
 	"cat" 
 	"chmod"
@@ -258,18 +257,33 @@ list_tools() {
 }
 ##################################################################
 check_gnutools(){
+	local fixfile=/tmp/fixfile
+	echo -e '#!/bin/bash'>$fixfile
 	writelog "Checking gnu tools in /usr/local/bin" |tee -a $LOGFILE
 	for gnutool in ${GNU_TOOLS[@]}; do
 		if [[ ( -f  $UBIN/g${gnutool}) && ( ( ! -L $UBIN/${gnutool} ) ||  ( ! -f $UBIN/${gnutool} )) ]]; then
-			writelog "Linking  $UBIN/g${gnutool} --> $UBIN/$gnutool" |tee -a $LOGFILE
-			ln -s $UBIN/g${gnutool} $UBIN/$gnutool
+			writelog "Did not find $UBIN/g${gnutool} --> Linked to --> $UBIN/$gnutool" |tee -a $LOGFILE
+			if [ ! -z $fg ]; then
+				echo "ln -s $UBIN/g${gnutool} $UBIN/$gnutool" >>$fixfile
+			elif [ ! -z $fix_tools ]; then
+				ln -s $UBIN/g${gnutool} $UBIN/$gnutool
+			fi
+		else
+			writelog "Found $UBIN/g${gnutool} --> Linked to --> $UBIN/$gnutool" |tee -a $LOGFILE
 		fi
 	done
+			if [ ! -z $fg ]; then
+				writelog "Correcting $(wc -l $fixfile|awk '{print $1}') gnu tools in $UBIN"
+				sudo /bin/bash $fixfile
+				rm -f $fixfile 2>/dev/null
+			fi
 }
 ##################################################################
 fixdirperms() {
         writelog "Issuing  #sudo chown -R $(whoami) /usr/local/share/zsh /usr/local/share/zsh/site-functions" |tee -a $LOGFILE
         sudo chown -R $(whoami) /usr/local/share/zsh /usr/local/share/zsh/site-functions
+        check_gnutools
+
 }
 ##################################################################
 brew_install() {
@@ -298,10 +312,12 @@ usage() {
 	echo $LINE
 	echo "VERSION: $VERSION"
 	echo $LINE
-	echo "$SCRIPT [-c|-l|-i|-t|-h/?|v]"
+	echo "$SCRIPT [-c|-g|-G|-l|-i|-t|-h/?|v]"
 	echo "	-c	Check to see if HomeBrew Exists"
 	echo "	-i	Install HomeBrew and Tools"
 	echo "	-l	List HomeBrew Tools to be installed"
+	echo "	-g	Re-check gnu-tools(done during install)"
+	echo "	-G	Manually correct gnu-tool links (if they need to be rechecked)"
 	echo "	-t	Install HomeBrew Tools ONLY"
 	echo "	-v	Show $SCRIPT Version"
 	echo $LINE
@@ -311,14 +327,16 @@ usage() {
 if [ $# == 0 ]; then
 	usage
 fi
-while getopts 'clitvh' OPT_NAME; do
+while getopts 'clGitgvh' OPT_NAME; do
 	case $OPT_NAME in
 		("h"|\?)
 			usage;;
-		("t")	tools_only=1;;
+		("t")	tools_only=1;fix_tools=1;;
 		("c")	check=1;;
 		("l")	list_tools;exit;;
-		("i")	do_install=1;;
+		("i")	do_install=1;fix_tools=1;;
+		("g")	gnu_check=1;check=1;;
+		("G")	gnu_check=1;check=1;fg=1;;
 		("v")	echo "$SCRIPT version $VERSION";exit 0;;
 	esac
 done
@@ -343,14 +361,15 @@ if [ ! -z $check ] || [ ! -z $do_install ] || [ ! -z $tools_only ]; then
 		exit 1
 	fi
 fi
-
-check_root 
+if [ -z $gnu_check ]; then
+	check_root 
+fi
 
 if [  -z $check ] && [ ! -z $do_install ]; then
 	if [ ! -z $do_install ] && [  -z $nobrew ]; then
 		writelog "Attempting to install Homebrew"
-		writelog "/bin/bash -c \"$(curl -fsSL $HOMEBREW_INSTALL_URL)\"" |tee -a $LOGFILE
-		/bin/bash -c "$(curl -fsSL $HOMEBREW_INSTALL_URL)" |tee -a $LOGFILE
+		writelog "/bin/bash -c  \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"" |tee -a $LOGFILE
+		/bin/bash -c  "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" |tee -a $LOGFILE
 	else
 		exit 1
 	fi
@@ -363,6 +382,9 @@ if [ ! -z $do_install ] || [ ! -z $tools_only ]; then
 		fixdirperms
 		check_gnutools
 	fi
+fi
+if [ ! -z $gnu_check ]; then
+		check_gnutools
 fi
 writelog "Done."
 writelog "Results in $LOGFILE"
