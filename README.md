@@ -10,7 +10,39 @@ I created this for use on MAC OSX Monterey (12.6)+, but it could also be used on
 
 ### Homebrew is required.
 - To install Homebrew and the prerequisites, I have created brew-setup.sh on his repo as well.
+- BE SURE YOU ARE A NON-ROOT USER.
+-- You will get an error if you attempt to install as root
+```
+#  ./brew-setup.sh -c
+[2022-09-29T15:35:32] HomeBrew found: /usr/local/bin/brew
+[2022-09-29T15:35:32] Curl Found /usr/bin/curl
+[2022-09-29T15:35:32] ERROR: You cannot install HomeBrew as a root user
+```
+- View Usage
+```
+$ chmod 755 brew-setup.sh
+$ ./brew-setup.sh 
+====================================================
+VERSION: 2.4
+====================================================
+brew-setup.sh [-c|-l|-i|-t|-h/?|v]
+	-c	Check to see if HomeBrew Exists
+	-i	Install HomeBrew and Tools
+	-l	List HomeBrew Tools to be installed
+	-t	Install HomeBrew Tools ONLY
+	-v	Show brew-setup.sh Version
+====================================================
+```
 
+- Install HomeBrew and the tools.
+```
+$ ./brew-setup.sh -i
+```
+
+- If you already have homebrew installed and only want to install the tools you can merely run:
+```
+$ ./brew-install.sh -t
+```
 
 ### VPNC Script is required. 
 - It is included in this repo
