@@ -74,7 +74,7 @@ Then the file was not downloaded correctly. Re-download the file from https://ra
 
 ### Credentials
 - Your VPN Authentication Credentials
-- The credentials should be saved to file /etc/vpnc/.tvpn-credentials
+- The credentials should be saved to file /etc/vpnc/.credentials
 
 
 ###  Set the SHELL environment
@@ -228,7 +228,7 @@ en0 192.168.1.13
 mkdir /etc/vpnc
 ```
 
-#  Create text file /etc/vpnc/.tvpn-credentials
+#  Create text file /etc/vpnc/.credentials
 Add your credentials based on the following variables
 ```
 COM_AUTHGROUP=
@@ -239,7 +239,7 @@ INTERFACE=
 ```
 
 [^note]:
-EXAMPLE /etc/vpnc/.tvpn-credentials
+EXAMPLE /etc/vpnc/.credentials
 ```
 # CREDENTIALS FILE FOR TVPN SCRIPT
 # YOUR VPN AUTH GROUP
@@ -283,11 +283,22 @@ Create the (resolv.conf) default template, and your VPN(custom) Entries
 TVPN logs are stored in $HOME/logs/tvpn
 ```
 # ls $HOME/logs/tvpn
-tvpn.202209.log
+tvpn.2022010.log
 ```
 
+If there is a need to monitor the initial startup of tvpn there is also file tvpn.<date>.wait
+```
+# tail tvpn.202210.wait
+[2022-10-03T10:53:41] benmacbook Waiting to confirm connection. Sleep #0
+[2022-10-03T10:53:46] benmacbook Waiting to confirm connection. Sleep #1
+[2022-10-03T10:53:51] benmacbook Waiting to confirm connection. Sleep #2
+[2022-10-03T10:53:56] benmacbook Waiting to confirm connection. Sleep #3
+[2022-10-03T10:54:01] benmacbook Waiting to confirm connection. Sleep #4
+[2022-10-03T10:54:06] benmacbook Waiting to confirm connection. Sleep #5
+[2022-10-03T10:54:11] benmacbook DNS Check Complete. [tpvn.daemon] exiting successfully.
+```
 
-# RUN TVPN
+# STARTING AND STOPPING VPN CONNECTION USING TVPN
 
 ## VIEW TVPN USAGE
 
@@ -296,7 +307,7 @@ VIEW SCRIPT USAGE
 ```
 	# tvpn -?
 	================================================================
-	>[tvpn]:  VPN Script to connect to the VPN [version 4.0]
+	>[tvpn]:  VPN Script to connect to the VPN [version 4.2]
 	================================================================
 	>usage
 	  #tvpn [start|stop|status|-c|-s|-d|-r|-v]
@@ -315,14 +326,15 @@ VIEW SCRIPT USAGE
 ## Check TVPN status
 ```
 # tvpn status
-[2022-09-28T14:57:28] benmacbook tvpn Not currently running.
+[2022-10-03T11:21:14] benmacbook [tvpn] is currently running as PID 33282
+
 ```
 
-## View Current Credentials from /etc/vpnc/.tvpn-credentials
+## View Current Credentials from /etc/vpnc/.credentials
 ```
 # tvpn -c
 ================================================================
-CREDENTIALS FROM [/etc/vpnc/.tvpn-credentials]
+CREDENTIALS FROM [/etc/vpnc/.credentials]
 ================================================================
 VPN_GROUP       =       ACME
 VPN_USER        =       wcoyote
@@ -368,5 +380,7 @@ Connected to HTTPS on vpn-hq.tintri.com with ciphersuite (TLS1.2)-(ECDHE-SECP256
 ## Stop TVPN
 ```
 # tvpn stop
+[2022-10-03T10:52:29] benmacbook [tvpn] currently running under 30614. Stopping.
+
 ```
 
