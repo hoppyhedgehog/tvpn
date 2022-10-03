@@ -3,7 +3,7 @@
 #LAST_MODIFIED: 2022-09-26T16:32:39
 ###################################################################
 PS4='${LINENO}: '
-VERSION=2.5
+VERSION=2.6
 ###################################################################
 SCRIPT=$(basename ${BASH_SOURCE[0]})
 UBIN=/usr/local/bin
@@ -75,13 +75,14 @@ HOMEBREW_ESSENTIALS=(
         "gmp"
         "gnu-getopt"
         "gnu-indent"
-	"gnu-sed"
+        "gnu-sed"
         "gnu-tar"
         "gnu-which"
         "gnutls"
         "gobject-introspection"
         "googler"
         "graphite2"
+        "gecho"
         "grep"
         "grpc"
         "gstat"
