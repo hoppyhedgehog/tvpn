@@ -57,24 +57,23 @@ this script must be called from vpnc
 If you see an error such as
 ```
 # bash vpnc-script
-# bash vpnc-script
 vpnc-script: line 838: warning: here-document at line 439 delimited by end-of-file (wanted `EOF')
 vpnc-script: line 839: syntax error: unexpected end of file
 ```
-Then the file was not downloaded correctly. Re-download the file from https://raw.githubusercontent.com/cloudflare/vpnc-scripts/master/vpnc-script by doing File --> Save to verify it is saved as a plain text file.
+Then the file was not downloaded correctly. 
+Re-download the file from https://raw.githubusercontent.com/cloudflare/vpnc-scripts/master/vpnc-script by doing File --> Save to verify it is saved as a plain text file.
 
 ### OpenConnect is required
-- You can install it from [GitHub](https://formulae.brew.sh/formula/openconnect) or use the brew-setup.sh
+- Use the brew-setup.sh script, or you can install it from [GitHub](https://formulae.brew.sh/formula/openconnect) 
 
 *Also, the version I used is included in this repo.*
 
 
-### VPN Server
-- The IP Address or FQDN of YOUR Company VPN Server
 
-### Credentials
-- Your VPN Authentication Credentials
-- The credentials should be saved to file /etc/vpnc/.credentials
+### YOUR VPN Credentials
+- Your VPN Authentication Credentials (User Name, Password, Domain, Auth Group)
+- The IP Address or FQDN of YOUR Company VPN Server
+- The credentials should be saved to file /etc/vpnc/.credentials using the template format in this repo
 
 
 ###  Set the SHELL environment
