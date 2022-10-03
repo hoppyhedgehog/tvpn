@@ -49,6 +49,19 @@ $ ./brew-install.sh -t
 ### VPNC Script is required. 
 - It is included in this repo
 - OR you may [download it from here](https://gitlab.com/openconnect/vpnc-scripts/raw/master/vpnc-script)
+- Verify the script is downloaded correctly without spaces or bad characters
+```
+# bash vpnc-script
+this script must be called from vpnc
+```
+If you see an error such as
+```
+# bash vpnc-script
+# bash vpnc-script
+vpnc-script: line 838: warning: here-document at line 439 delimited by end-of-file (wanted `EOF')
+vpnc-script: line 839: syntax error: unexpected end of file
+```
+Then the file was not downloaded correctly. Re-download the file from https://raw.githubusercontent.com/cloudflare/vpnc-scripts/master/vpnc-script by doing File --> Save to verify it is saved as a plain text file.
 
 ### OpenConnect is required
 - You can install it from [GitHub](https://formulae.brew.sh/formula/openconnect) or use the brew-setup.sh
