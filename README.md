@@ -1,12 +1,36 @@
-# tvpn
-A VPNC Wrapper Script that allows you to connect to your Cisco VPN using Openconnect instead of using the Native Cisco Client.
+# ABOUT tvpn
+
+TVPN is a VPNC Wrapper Script that allows you to connect to your Cisco VPN using Openconnect instead of using the Native Cisco Client.
 
 I created this for use on MAC OSX Monterey (12.6)+, but it could also be used on Linux.
 
-#  PREREQUISITES
+# UPGRADING
+
+
+If you have tvpn v4.1 or earlier here are details on files that should be copied over the existing ones.
+
+**tvpn**
+- The main script that should overwrite your existing one in /usr/local/bin
+
+**.tvpn-credentials** 
+- The /etc/vpnc/.tvpn-credentials file was renamed to /etc/vpnc/.credentials
+
+**brew-setup.sh**
+- You should re-download brew-setup.sh, although if you have tvpn installed you do NOT have to re-run it.
+
+**mac_shell_environment_wrapper.sh**
+- No significant changes.
+
+**vpnc-script**
+- Download and replace file vpnc-script. It was changed from a customized file to the default file [download it from here](https://gitlab.com/openconnect/vpnc-scripts/raw/master/vpnc-script)
+
+
+
+#  INSTALLATION PREREQUISITES
 
 ### Root user 
 - TVPN is designed to be run AS ROOT
+You may run sudo if you prefer
 
 ### Homebrew is required.
 - To install Homebrew and the prerequisites, I have created brew-setup.sh on his repo as well.
