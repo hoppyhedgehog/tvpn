@@ -5,7 +5,7 @@
 # INSTALL LOCATION: 	/usr/local/bin
 # AUTHOR: 		ben@datastorageguy.com
 ###################################################################
-VERSION=4.2
+VERSION=4.3
 ###################################################################
 # Add Line Numbers during 'set -x' debug
 ###################################################################
@@ -532,7 +532,16 @@ start_vpn() {
 }
 ###################################################################
 rmpid() {
- rm -f $PIDFILE >/dev/null 2>&1
+	rm -f $PIDFILE >/dev/null 2>&1
+}
+###################################################################
+check_running_process() {
+	pgrep -x "$1"|grep -q "[0-9]" 2>/dev/null
+	if [ $? == 0 ]; then
+		echo 0
+	else
+		echo 1
+	fi
 }
 ###################################################################
 check_pid() {
@@ -547,12 +556,10 @@ check_pid() {
 		fi
 	else
 		local r=0
-		pgrep openconnect >/dev/null 2>&1
-		if [ $? != 0 ]; then
+		if [ $(check_running_process openconnect) ]; then
 			r=1
 		fi
-		pgrep "bash tvpn">/dev/null 2>&1
-		if [ $? != 0 ]; then
+		if [ $(check_running_process "bash tvpn") ]; then
 			r=1
 		fi
 		echo $r
@@ -567,15 +574,13 @@ stop_vpn(){
 			writelog "[$SCRIPT] currently running under $pid. Stopping."
 			(kill -9 $pid $oc >/dev/null 2>&1)
 		fi
-		pgrep -x openconnect >/dev/null 2>&1
-		if [ $? == 0 ]; then
+		if [ $(check_running_process openconnect) ]; then
 			local sr=1
-			writelog "[$SCRIPT] is still running as $(pgrep -x openconnect). Stopping"
+			writelog "[$SCRIPT] shows openconnect is still running as $(pgrep -x openconnect). Stopping"
 			pkill -9 openconnect 2>/dev/null
 		fi
-		pgrep -x $SCRIPT >/dev/null 2>&1
-		if [ $? == 0 ]; then
-			writelog "[$SCRIPT] still running as $(pgrep -x $SCRIPT). Stopping."
+		if [ $(check_running_process $SCRIPT) ]; then
+			writelog "[$SCRIPT] is still running as $(pgrep -x $SCRIPT). Stopping."
 			pkill -9 $SCRIPT 2>/dev/null
 		fi
 		rmpid
@@ -586,21 +591,13 @@ stop_vpn(){
 }
 ###################################################################
 verify_connect_status() {
-	if [ $(pgrep -x openconnect) ] || [ $(tail -5 $LOGFILE |grep -q "^No work"; echo $?) == 0 ] || [ $(tail -5 $LOGFILE |grep -q "Keepalive"; echo $?) == 0 ] || [ $(tail -5 $LOGFILE |grep -q "Sent DTLS";echo $?) == 0 ]; then
+	if [ $(check_running_process openconnect) ] || [ $(tail -5 $LOGFILE |grep -q "^No work"; echo $?) == 0 ] || [ $(tail -5 $LOGFILE |grep -q "Keepalive"; echo $?) == 0 ] || [ $(tail -5 $LOGFILE |grep -q "Sent DTLS";echo $?) == 0 ]; then
 		echo 0
 	else
 		echo 1
 	fi
 }
 
-###################################################################
-verify_openconnect_running() {
-	if [ $(pgrep -x openconnect) ]; then
-		echo 0
-	else
-		echo 1
-	fi
-}
 ###################################################################
 verify_openconnect_connected() {
  	if [ $(tail -5 $LOGFILE |grep -q "^No work"; echo $?) == 0 ] || [ $(tail -5 $LOGFILE |grep -q "Keepalive"; echo $?) == 0 ] || [ $(tail -5 $LOGFILE |grep -q "Sent DTLS";echo $?) == 0 ]; then
@@ -619,7 +616,7 @@ check_start_status() {
 		get_date
 		nc=0
 
-		if [ $(verify_openconnect_running) ]; then
+		if [ $(check_running_process openconnect) ]; then
 			printf "$dtc [$SCRIPT] is connected and running as PID $(pgrep -x openconnect)\n"
 			i=1
 		fi
@@ -638,12 +635,12 @@ check_start_status() {
 }
 ###################################################################
 status_vpn() {
-	if [ $(verify_openconnect_running) != 0 ]; then
+	if [ $(check_running_process openconnect) != 0 ]; then
 		writelog "[$SCRIPT] is not currently running." 1
 		return
 	fi
 
-	if [ $(verify_openconnect_running) == 0 ]; then
+	if [ $(check_running_process openconnect) == 0 ]; then
 		writelog "[$SCRIPT] is currently running as PID $(pgrep -x openconnect)" 1
 		return
 	else
