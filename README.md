@@ -4,6 +4,15 @@ TVPN is a VPNC Wrapper Script that allows you to connect to your Cisco VPN using
 
 I created this for use on MAC OSX Monterey (12.6)+, but it could also be used on Linux.
 
+
+# NEW FEATURES
+Version 5.0 includs major changes:
+- Credentials file is /etc/.credentials
+- Paswords are now encrypted and decrypted (when needed)
+- There is a "setup" option. Setup builds credentials file which caches username/domain/authgroup/vpn server/DNS info/etc.
+- There are options to reset the individual options within the credentials.
+- The reset scripts to modify dns when on VPN vs HOME are renamed to /usr/local/bin/tvpn-reset-dns-vpn and /usr/local/bin/tvpn-reset-dns-home
+
 # UPGRADING
 
 
@@ -15,6 +24,10 @@ If you have tvpn v4.1 or earlier here are details on files that should be copied
 **.tvpn-credentials** 
 - The /etc/vpnc/.tvpn-credentials file was renamed to /etc/vpnc/.credentials
 
+
+# FILES
+**tvpn** 
+- The main script which should be copied to /usr/local/bin
 **brew-setup.sh**
 - You should re-download brew-setup.sh, although if you have tvpn installed you do NOT have to re-run it.
 
@@ -251,33 +264,6 @@ en0 192.168.1.13
 mkdir /etc/vpnc
 ```
 
-#  Create text file /etc/vpnc/.credentials
-Add your credentials based on the following variables
-```
-COM_AUTHGROUP=
-COM_USER=
-COM_PASSWD=
-COM_DOMAIN=
-INTERFACE=
-```
-
-[^note]:
-EXAMPLE /etc/vpnc/.credentials
-```
-# CREDENTIALS FILE FOR TVPN SCRIPT
-# YOUR VPN AUTH GROUP
-COM_AUTHGROUP="ACME"
-# YOUR VPN USER ID
-COM_USER="wcoyote"
-# YOUR VPN PASSWORD (enclose in single quotes!)
-COM_PASSWD='Ro@dRunn3r'
-# YOUR VPN DOMAIN
-COM_DOMAIN="ACME"
-# YOUR VPN HOST NAME OR IP ADDRESS
-COM_HOST="vpn-hq.acme.com"
-# YOUR PRIMARY ACTIVE INTERFACE
-INTERFACE=en10
-```
 
 # Copy VPNC Script to /etc/vpnc
 
@@ -289,18 +275,233 @@ INTERFACE=en10
 /etc/vpnc/vpnc-script: POSIX shell script text executable, Unicode text, UTF-8 text
 ```
 
-# CREATE DNS TEMPLATES
-Create the (resolv.conf) default template, and your VPN(custom) Entries
 
-- Copy default resolv.conf to /etc/vpnc/vpnc.resolv.conf.default
+# BEGIN SETUP
+Setup TVPN by viewing the script usage.
 ```
-# cp /etc/resolv.conf /etc/vpnc/vpnc.resolv.conf.default
+================================================================
+>[tvpn]:  VPN Script to connect to the VPN [version 5.0]
+================================================================
+>usage
+  # tvpn [start|stop|status|restart|setup|-s|-d|-p|-r <arg>|-v]
+          start   Initialize connection to  VPN
+          stop    Close connection to  VPN
+          restart Restart VPN connection
+          status  View the current VPN Connection Status
+          setup   Setup and configure TVPN
+          -s      Tail the current /Users/bpatridge/logs/tvpn/tvpn.202307.log
+                  to verify the current Connection Status
+          -d      Enable Debug
+          -p      Print Credentials (password decrypted)
+          -r <arg>
+                        all     - Reset Everything and re-run Setup
+                        route   - Reset Routing
+                        int     - Reset Network Interface info
+                        user    - Reset VPN User Credentials
+                        pass    - Reset VPN User Password
+                        dom     - Reset VPN Domain
+                        group   - Reset VPN Auth Group
+                        serv    - Reset VPN Server
+                        vd      - Reset VPN DNS Servers
+                        ld      - Reset LOCAL  DNS Servers
+          -v      Version info
+================================================================
 ```
 
-- Create your CUSTOM resolv.conf in /etc/vpnc/resolv.conf.custom
+Then you may issue setup
+
 ```
-# cp /etc/vpnc/vpnc.resolv.conf.custom
+# tvpn setup
+[69][root@benmacbook]# tvpn setup
+[2023-07-10T15:13:29] benmacbook Using INTERFACE=en10 IP=192.168.1.187 NWSERVICE='USB 10/100/1000 LAN 2'
+[2023-07-10T15:13:29] benmacbook Enter your VPN Username> bpatridge
+[2023-07-10T15:13:34] benmacbook Writing VPN User [bpatridge] --> /private/etc/vpnc/.credentials
+[2023-07-10T15:13:34] benmacbook -----------------------------------------------------------
+[2023-07-10T15:13:34] benmacbook Enter your Password >
+[2023-07-10T15:13:46] benmacbook Re-Enter your Password >
+[2023-07-10T15:13:48] benmacbook -----------------------------------------------------------
+[2023-07-10T15:13:48] benmacbook Enter your AD Domain > acme
+[2023-07-10T15:13:52] benmacbook Writing AD Domain [ACME] --> /private/etc/vpnc/.credentials
+[2023-07-10T15:13:52] benmacbook -----------------------------------------------------------
+[2023-07-10T15:13:52] benmacbook Enter your VPN Auth Group> acme
+[2023-07-10T15:13:54] benmacbook Writing VPN AuthGroup[ACME] --> /private/etc/vpnc/.credentials
+[2023-07-10T15:13:54] benmacbook -----------------------------------------------------------
+[2023-07-10T15:13:54] benmacbook Enter your VPN Server FQDN or IP address> vpn-hq.acme.com
+[2023-07-10T15:14:27] benmacbook Writing VPN Server [vpn-hq.acme.com] --> /private/etc/vpnc/.credentials
+[2023-07-10T15:14:27] benmacbook -----------------------------------------------------------
+[2023-07-10T15:14:27] benmacbook -----------------------------------------------------------
+[2023-07-10T15:14:27] benmacbook Gathering a list of VPN DNS Servers
+[2023-07-10T15:14:27] benmacbook ENTER BLANK OR "." TO EXIT
+[2023-07-10T15:14:27] benmacbook Enter your VPN DNS Server IP #1>10.25.40.53
+[2023-07-10T15:14:41] benmacbook Enter your VPN DNS Server IP #2>10.10.10.53
+[2023-07-10T15:14:46] benmacbook Enter your VPN DNS Server IP #3>172.16.241.94
+[2023-07-10T15:14:54] benmacbook Enter your VPN DNS Server IP #4>172.16.241.187
+[2023-07-10T15:15:04] benmacbook Enter your VPN DNS Server IP #5>8.8.8.8
+[2023-07-10T15:15:08] benmacbook Enter your VPN DNS Server IP #6>1.1.1.1
+[2023-07-10T15:15:11] benmacbook Enter your VPN DNS Server IP #7>
+[2023-07-10T15:15:12] benmacbook Writing VPN DNS [6] SERVERS --> /private/etc/vpnc/.credentials
+[2023-07-10T15:15:12] benmacbook Gathering a list of VPN DNS Servers to search
+[2023-07-10T15:15:12] benmacbook ENTER BLANK OR "." TO EXIT
+[2023-07-10T15:15:12] benmacbook Enter your VPN DNS Domain Search Server Name #1>acme.ad
+[2023-07-10T15:15:18] benmacbook Enter your VPN DNS Domain Search Server Name #2>acme.com
+[2023-07-10T15:15:22] benmacbook Enter your VPN DNS Domain Search Server Name #3>bintri.ad
+[2023-07-10T15:15:24] benmacbook Enter your VPN DNS Domain Search Server Name #4>
+[2023-07-10T15:15:25] benmacbook Writing VPN DNS [3] DOMAIN SEARCH SERVERS --> /private/etc/vpnc/.credentials
+[2023-07-10T15:15:25] benmacbook -----------------------------------------------------------
+[2023-07-10T15:15:25] benmacbook -----------------------------------------------------------
+[2023-07-10T15:15:25] benmacbook Gathering a list of LOCAL DNS Servers
+[2023-07-10T15:15:25] benmacbook ENTER BLANK OR "." TO EXIT
+[2023-07-10T15:15:25] benmacbook Enter your LOCAL DNS Server IP #1>192.168.1.1
+[2023-07-10T15:15:34] benmacbook Enter your LOCAL DNS Server IP #2>8.8.8.8
+[2023-07-10T15:15:36] benmacbook Enter your LOCAL DNS Server IP #3>1.1.1.1
+[2023-07-10T15:15:37] benmacbook Enter your LOCAL DNS Server IP #4>
+[2023-07-10T15:15:38] benmacbook Writing LOCAL DNS [3] SERVERS --> /private/etc/vpnc/.credentials
+[2023-07-10T15:15:38] benmacbook Gathering a list of LOCAL DNS Servers to search
+[2023-07-10T15:15:38] benmacbook ENTER BLANK OR "." TO EXIT
+[2023-07-10T15:15:38] benmacbook Enter your LOCAL DNS Domain Search Server Name #1>
+[2023-07-10T15:15:40] benmacbook -----------------------------------------------------------
+########################################
+# CREDENTIALS FILE FOR TVPN SCRIPT
+########################################
+INTERFACE=en10
+NWSERVICE='USB 10/100/1000 LAN 2'
+COM_USER="bpatridge"
+COM_PASSWD='mypassword'
+COM_DOMAIN="ACME"
+COM_AUTHGROUP="ACME"
+COM_HOST="myvpn.acme.com"
+VPN_NAMESERVER[1]="10.25.40.53"
+VPN_NAMESERVER[2]="10.10.10.53"
+VPN_NAMESERVER[3]="172.16.241.94"
+VPN_NAMESERVER[4]="172.16.241.187"
+VPN_NAMESERVER[5]="8.8.8.8"
+VPN_NAMESERVER[6]="1.1.1.1"
+VPN_SEARCH[1]="acme.ad"
+VPN_SEARCH[2]="acme.com"
+VPN_SEARCH[3]="bintri.ad"
+LOCAL_NAMESERVER[1]="192.168.1.1"
+LOCAL_NAMESERVER[2]="8.8.8.8"
+LOCAL_NAMESERVER[3]="1.1.1.1"
+
 ```
+
+To verify it is connected you can issue 'tvpn -s' and should see something like the following when it is connected
+```
+# tvpn -s
+Received DTLS packet 0x00 of 57 bytes
+No work to do; sleeping for 18000 ms...
+Sent DTLS packet of 64 bytes; DTLS send returned 65
+No work to do; sleeping for 17000 ms...
+Received DTLS packet 0x00 of 57 bytes
+No work to do; sleeping for 17000 ms...
+Sent DTLS packet of 64 bytes; DTLS send returned 65
+No work to do; sleeping for 16000 ms...
+Received DTLS packet 0x00 of 57 bytes
+No work to do; sleeping for 16000 ms...
+```
+
+If there is a need to monitor the initial startup of tvpn there is also file tvpn.wait
+```
+# cat $HOME/logs/tvpn/tvpn.wait
+[2023-07-10T14:32:37] benmacbook Waiting to confirm connection. Sleep #0
+[2023-07-10T14:32:42] benmacbook Waiting to confirm connection. Sleep #1
+[2023-07-10T14:32:47] benmacbook Waiting to confirm connection. Sleep #2
+[2023-07-10T14:32:52] benmacbook Waiting to confirm connection. Sleep #3
+[2023-07-10T14:32:57] benmacbook Waiting to confirm connection. Sleep #4
+[2023-07-10T14:33:02] benmacbook Waiting to confirm connection. Sleep #5
+[2023-07-10T14:33:07] benmacbook Waiting to confirm connection. Sleep #6
+[2023-07-10T14:33:12] benmacbook DNS Check Complete. [tpvn.daemon] exiting successfully.
+
+```
+
+
+# CHECK CURRENT VERSION
+```
+# tvpn -v
+tvpn v5.0
+```
+
+# STARTING AND STOPPING VPN CONNECTION USING TVPN
+
+
+## Check TVPN status
+```
+# tvpn status
+[2022-10-03T11:21:14] benmacbook [tvpn] is currently running as PID 33282
+
+```
+
+## View Current Credentials from /etc/vpnc/.credentials
+```
+# tvpn -p
+########################################
+# CREDENTIALS FILE FOR TVPN SCRIPT
+########################################
+INTERFACE=en10
+NWSERVICE='USB 10/100/1000 LAN 2'
+COM_USER="bpatridge"
+COM_PASSWD='U2FsdGVkX19l5YWuyOpgY0pvjodz3U1XSUtk5Wo9pKU=' [UNENCRYPTED = N3wH0r!z0nZ]
+COM_DOMAIN="TINTRI"
+COM_AUTHGROUP="TINTRI"
+COM_HOST="vpn-hq.tintri.com"
+VPN_NAMESERVER[1]="10.25.40.53"
+VPN_NAMESERVER[2]="10.10.10.53"
+VPN_NAMESERVER[3]="172.16.241.94"
+VPN_NAMESERVER[4]="172.16.241.187"
+VPN_NAMESERVER[5]="8.8.8.8"
+VPN_NAMESERVER[6]="1.1.1.1"
+VPN_SEARCH[1]="tintri.ad"
+VPN_SEARCH[2]="tintri.com"
+VPN_SEARCH[3]="bintri.ad"
+LOCAL_NAMESERVER[1]="192.168.1.1"
+LOCAL_NAMESERVER[2]="8.8.8.8"
+LOCAL_NAMESERVER[3]="1.1.1.1"
+================================================================
+
+
+```
+## Start TVPN
+- To Start TVPN
+```
+# tvpn start
+[2022-09-28T15:24:30] benmacbook Initiating connection to VPN to ACME
+[2022-09-28T15:24:30] benmacbook Started VPN as PID: 4726
+#
+```
+
+## View Connection Status
+```
+#tvpn -s
+[2022-09-28T15:24:30] benmacbook Started VPN as PID:
+Attempting to connect to server 101.254.210.230:443
+Connected to 101.254.210.230:443
+SSL negotiation with vpn-hq.acme.com
+Server certificate verify failed: signer not found
+Connected to HTTPS on vpn-hq.acme.com with ciphersuite (TLS1.2)-(ECDHE-SECP256R1)-(RSA-SHA512)-(AES-256-GCM)
+> POST / HTTP/1.1
+> Host: vpn-hq.acme.com
+> User-Agent: Open AnyConnect VPN Agent v9.01
+> Accept: */*
+> Accept-Encoding: identity
+> X-Transcend-Version: 1
+> X-Aggregate-Auth: 1
+> X-Support-HTTP-Auth: true
+> X-AnyConnect-STRAP-Pubkey: MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAED1QxFzpzgeSr0YNXB891wFdlkgMbMTmSLlAthyr75sc2KYYA1uMG4XnRjBcK6tgii/0ChGJ7PvSuUfZPzHinSA==
+> X-AnyConnect-STRAP-DH-Pubkey: MFkwEwYHKoZIzj0CAQYIKoZ
+```
+
+## Stop TVPN
+```
+# tvpn stop
+[2022-10-03T10:52:29] benmacbook [tvpn] currently running under 30614. Stopping.
+```
+
+
+## Restart TVPN
+
+```
+# tvpn restart
+``` 
 
 # LOGS
 TVPN logs are stored in $HOME/logs/tvpn
@@ -319,91 +520,5 @@ If there is a need to monitor the initial startup of tvpn there is also file tvp
 [2022-10-03T10:54:01] benmacbook Waiting to confirm connection. Sleep #4
 [2022-10-03T10:54:06] benmacbook Waiting to confirm connection. Sleep #5
 [2022-10-03T10:54:11] benmacbook DNS Check Complete. [tpvn.daemon] exiting successfully.
-```
-
-# STARTING AND STOPPING VPN CONNECTION USING TVPN
-
-## VIEW TVPN USAGE
-
-
-VIEW SCRIPT USAGE
-```
-	# tvpn -?
-	================================================================
-	>[tvpn]:  VPN Script to connect to the VPN [version 4.2]
-	================================================================
-	>usage
-	  #tvpn [start|stop|status|-c|-s|-d|-r|-v]
-		  start   Initialize connection to vpn-hq.tintri.com VPN
-		  stop    Close connection to vpn-hq.tintri.com VPN
-		  status  View the current VPN Connection Status
-		  -c      View your current Credentials
-		  -s      Tail the current /Users/bpatridge/logs/tvpn.202209.log
-			  to verify the current Connection Status
-		  -d      Enable Debug
-		  -r      Reset Network and Routing
-		  -v      Version info
-	================================================================
-```
-
-## Check TVPN status
-```
-# tvpn status
-[2022-10-03T11:21:14] benmacbook [tvpn] is currently running as PID 33282
-
-```
-
-## View Current Credentials from /etc/vpnc/.credentials
-```
-# tvpn -c
-================================================================
-CREDENTIALS FROM [/etc/vpnc/.credentials]
-================================================================
-VPN_GROUP       =       ACME
-VPN_USER        =       wcoyote
-VPN_PASSWORD    =       Ro@dRunn3r
-VPN_DOMAIN      =       ACME
-VPN_HOST        =       vpn-hq.acme.com
-MY_INTERFACE    =       en10
-================================================================
-
-```
-
-
-## Start TVPN
-- To Start TVPN
-```
-# tvpn start
-[2022-09-28T15:24:30] benmacbook Initiating connection to VPN to TINTRI
-[2022-09-28T15:24:30] benmacbook Started VPN as PID: 4726
-#
-```
-
-## View Connection Status
-```
-#tvpn -s
-[2022-09-28T15:24:30] benmacbook Started VPN as PID:
-Attempting to connect to server 101.254.210.230:443
-Connected to 101.254.210.230:443
-SSL negotiation with vpn-hq.acme.com
-Server certificate verify failed: signer not found
-Connected to HTTPS on vpn-hq.tintri.com with ciphersuite (TLS1.2)-(ECDHE-SECP256R1)-(RSA-SHA512)-(AES-256-GCM)
-> POST / HTTP/1.1
-> Host: vpn-hq.acme.com
-> User-Agent: Open AnyConnect VPN Agent v9.01
-> Accept: */*
-> Accept-Encoding: identity
-> X-Transcend-Version: 1
-> X-Aggregate-Auth: 1
-> X-Support-HTTP-Auth: true
-> X-AnyConnect-STRAP-Pubkey: MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAED1QxFzpzgeSr0YNXB891wFdlkgMbMTmSLlAthyr75sc2KYYA1uMG4XnRjBcK6tgii/0ChGJ7PvSuUfZPzHinSA==
-> X-AnyConnect-STRAP-DH-Pubkey: MFkwEwYHKoZIzj0CAQYIKoZ
-```
-
-## Stop TVPN
-```
-# tvpn stop
-[2022-10-03T10:52:29] benmacbook [tvpn] currently running under 30614. Stopping.
-
 ```
 
