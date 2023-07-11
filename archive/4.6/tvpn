@@ -1,0 +1,740 @@
+#!/bin/bash
+###################################################################
+# NAME: tvpn
+# DOWNLOAD: 		https://github.com/hoppyhedgehog/tvpn
+# INSTALL LOCATION: 	/usr/local/bin
+# AUTHOR: 		ben@datastorageguy.com
+###################################################################
+VERSION=4.6
+###################################################################
+# Add Line Numbers during 'set -x' debug
+###################################################################
+PS4='${LINENO}: '
+###################################################################
+###################################################################
+###################################################################
+###################################################################
+###################################################################
+# MAIN VARIABLES
+###################################################################
+###################################################################
+###################################################################
+###################################################################
+SCRIPT=$(basename ${BASH_SOURCE[0]})
+LD=$(date '+%Y%m')
+LOGDATE=$(date '+%Y%m%d.%H%M%S')
+LOGDATE_TEMP=$(date '+%Y%m%d.%H%M%S.%N')
+DATETIME=$(date '+%Y%m%dT%H%M%S')
+LOGDIR="$HOME/logs/tvpn"
+WAITLOG="$LOGDIR/${SCRIPT}.${LD}.wait"
+LOGFILE="$LOGDIR/${SCRIPT}.${LD}.log"
+PIDFILE=/var/run/$SCRIPT.pid
+MAX_LOGSIZE=25000000 #25M
+HOMEBREW_URL="https://raw.githubusercontent.com/Homebrew/install/master/install"
+GITHUB=https://github.com/hoppyhedgehog/tvpn
+LINE="================================================================"
+###################################################################
+###################################################################
+# Create Log Directory if it does not exist
+###################################################################
+if [ ! -d $LOGDIR ]; then
+	mkdir -p $LOGDIR 2>/dev/null
+fi
+###################################################################
+# Determine OS type
+###################################################################
+unameOut="$(uname -s)"
+case "${unameOut}" in
+    Linux*)     machine=Linux
+	    	ETC=/etc
+		SYSTEM_RESOLV=/etc/resolv.conf
+		;;
+    Darwin*)    machine=Mac
+	    	if [ -L /etc ]; then
+	    		ETC=/private/etc
+		else
+	    		ETC=/etc
+		fi
+		SYSTEM_RESOLV=/var/run/resolv.conf
+		;;
+    *)          machine="UNKNOWN:${unameOut}"
+	    	ETC=/etc
+		SYSTEM_RESOLV=/etc/resolv.conf
+		;;
+esac
+###################################################################
+# TVPN ACCESS CREDENTIALS FILE
+###################################################################
+CREDENTIALS=$ETC/vpnc/.credentials
+###################################################################
+# Move older credentials to new name for older tvpn versions
+###################################################################
+if [ -f $ETC/vpnc/.tvpn-credentials ]; then
+	mv -f $ETC/vpnc/.tvpn-credentials $CREDENTIALS &>/dev/null
+fi
+###################################################################
+# Check to see if /etc/vpnc dir exists
+###################################################################
+if [ ! -d $ETC/vpnc ]; then
+	printline
+	echo "ERROR: $ETC/vpnc dir not found."
+	echo "Verify you have installed vpnc-script in /etc/vpnc"
+	echo "And read the README"
+	echo "See $GITHUB"
+	printline
+	exit 1
+fi
+###################################################################
+# CHECK FOR EXISTENCE OF CREDENTIALS FILE
+###################################################################
+if [ ! -f $CREDENTIALS ]; then
+	echo "ERROR. $SCRIPT Credentials File: $CREDENTIALS Not Found!"
+	exit 1
+fi
+###################################################################
+# Read in credentials
+###################################################################
+source $CREDENTIALS
+###################################################################
+# Verify that the local path contains the correct PATHs 
+###################################################################
+check_path() { 
+	for tpath in "/bin" "/sbin" "/usr/local/bin" ; do
+		if [ $(echo "$PATH"|grep -w -q "$tpath"; echo $?) != 0 ]; then
+			export PATH=$tpath:$PATH
+		fi
+	done
+}
+###################################################################
+# VERIFY CREDENTIALS EXIST
+###################################################################
+printline(){
+		echo $LINE
+}
+###################################################################
+if [ -z "$COM_USER" ]; then
+	printline
+	echo "ERROR: No Username Specified for COM_USER in $SCRIPT"
+	printline
+ 	exit 1
+fi
+if [ -z "$COM_PASSWD" ]; then
+	printline
+	printf "ERROR: No Password Specified for COM_PASSWD in $SCRIPT"
+	printline
+	exit 1
+fi
+###################################################################
+check_path
+###################################################################
+if [ -z $INTERFACE ]; then
+  printline
+  echo ">NO ACTIVE ETHERNET/WIFI INTERFACE SPECIFIED"
+  echo ">THE FOLLOWING INTERFACES ARE ACTIVE."
+  printline
+  ifconfig | pcregrep -M -o '^[^\t:]+(?=:([^\n]|\n\t)*status: active)'
+  echo ">EDIT [$SCRIPT] AND SPECIFY THE CORRECT INTERFACE "
+  echo ">FOR THE 'INTERFACE' VARIABLE"
+  printline
+  exit 1
+fi
+###################################################################
+# Verify openconnect is installed
+###################################################################
+OPENC="$(which openconnect)"
+if [ ! -f $OPENC ]; then
+  echo $LINE
+  printf "ERROR: openconnect must be installed\n"
+  printf "See README @ $GITHUB"
+  printf "It is recommended you use HomeBrew\n"
+  printf "If you do not have HomeBrew do: \n"
+  printf "\$bash -c  \"\$(curl -fsSL $HOMEBREW_URL)\"\n"
+  printf "Set the environment post install, then do:\n"
+  printf "'brew install openssl openconnect' \n"
+  printf "OR\n"
+  printf "Download and Install openconnect from:\nhttps://www.infradead.org/openconnect/download.html\n$LINE\n"
+  exit 1
+fi
+###################################################################
+# COLORS
+###################################################################
+RED='\033[0;31m'
+NORMAL='\033[0m' # No Color
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
+BLUE='\033[0;94m'
+MAGENTA='\033[0;35m'
+###################################################################
+VPN_SCRIPT=$ETC/vpnc/vpnc-script
+export INTERNAL_IP4_DNS=
+###################################################################
+CUSTOM_RESOLV=$ETC/vpnc/resolv.conf.custom
+SOFT_LINK_SYSTEM_RESOLV=$ETC/resolv.conf
+DEFAULT_RESOLV=$ETC/vpnc/resolv.conf.default
+###################################################################
+if [[  ( $USER != "root" ) ]]; then
+  printline
+  echo "ERROR This script must be run as root."
+  printline
+  exit 1
+fi
+
+###################################################################
+if [ ! -L $SOFT_LINK_SYSTEM_RESOLV ]; then
+		rm -f $SOFT_LINK_SYSTEM_RESOLV &>/dev/null
+		ln -s $SYSTEM_RESOLV $SOFT_LINK_SYSTEM_RESOLV >/dev/null
+fi
+
+if [ ! -f $DEFAULT_RESOLV ]; then
+	cp -pf $SYSTEM_RESOLV $DEFAULT_RESOLV
+	cat $SYSTEM_RESOLV|sed  '/^\s*$/d;/\;/d;/^\#/d' >$DEFAULT_RESOLV
+	cat $SYSTEM_RESOLV|sed  '/^\s*$/d;/\;/d;/^\#/d' >>$CUSTOM_RESOLV
+	echo "options timeout:1 attempts:1">>$DEFAULT_RESOLV
+fi
+###################################################################
+check_debug() {
+if [ ! -z "$debug" ]; then
+                DEBUG="-vvv --dump"
+else
+                DEBUG="-v"
+fi
+}
+###################################################################
+OPENC="openconnect"
+COMMAND="$OPENC -vvv --dump  --authgroup $COM_AUTHGROUP --script $VPN_SCRIPT  -u $COM_USER --passwd-on-stdin --servercert pin-sha256:EK6cSsxsiVo6z7puoTQsmT7OKvcyzRB2IIjRVIGFClQ=  $COM_HOST"
+###################################################################
+checklog() {
+  if  [ ! -f $WAITLOG ]; then
+    touch $WAITLOG
+  fi
+  if  [ ! -f $LOGFILE ]; then
+    touch $LOGFILE
+  fi
+ }
+###################################################################
+check_credentials() {
+	printline
+	echo "CREDENTIALS FROM [$CREDENTIALS]"
+	printline
+	printf "VPN_GROUP\t=\t$COM_AUTHGROUP\n"
+	printf "VPN_USER\t=\t$COM_USER\n"
+	printf "VPN_PASSWORD\t=\t$COM_PASSWD\n"
+	printf "VPN_DOMAIN\t=\t$COM_DOMAIN\n"
+	printf "VPN_HOST\t=\t$COM_HOST\n"
+	printf "MY_INTERFACE\t=\t$INTERFACE\n"
+	printline
+	exit 0
+
+}
+###################################################################
+get_date() {
+	REAL_DATETIME=$(date '+%Y-%m-%dT%H:%M:%S')
+        dtc="${GREEN}[$REAL_DATETIME]${NORMAL} ${CYAN}$(hostname)${NORMAL}"
+	dt="[$REAL_DATETIME] $(hostname)"
+}
+###################################################################
+writelogo () {
+ 	checklog
+        THINLINE="-----------------------------------------------------------"
+        get_date
+        local e=""
+        local comment="$1"
+        printf "$dt $comment\n" >>$LOGFILE 2>&1
+}
+###################################################################
+writelog () {
+	checklog
+        THINLINE="-----------------------------------------------------------"
+        get_date
+        local e=""
+        local comment="$1"
+        printf "$dtc $comment\n"
+	 if [ -z "$2" ]; then
+		 (printf "$dt $comment\n" >>$LOGFILE 2>&1 )
+	 fi
+}
+###################################################################
+reset_all_routing() {
+    echo "Flushing routes...";
+    for i in $(ifconfig | egrep -o "^[a-z].+\d{1}:" | sed 's/://');
+    do
+        ifconfig "$i" down;
+    done;
+    route -n flush;
+    for i in $(ifconfig | egrep -o "^[a-z].+\d{1}:" | sed 's/://');
+    do
+        sudo ifconfig "$i" up;
+    done
+}
+
+###################################################################
+info_disable_sip() {
+	printline
+	cat << EOF 
+To verify SIP:
+
+# csrutil status
+System Integrity Protection status: enabled.
+
+
+To Disable SIP on Mac:
+
+a) Reboot the Mac and hold down Command + R keys simultaneously after you hear the startup chime, this will boot OS X into Recovery Mode
+
+b) When the "OS X Utilities" screen appears, pull down the 'Utilities' menu at the top of the screen instead, and choose "Terminal"
+
+c) Type the following command into the terminal then hit return:
+
+# csrutil disable; reboot
+
+d) You will see a message saying that System Integrity Protection has been disabled and the Mac needs to restart for changes to take effect, and the Mac will then reboot itself automatically, just let it boot up as normal
+EOF
+printline
+}
+
+###################################################################
+clear_dns() {
+	if [ $(csrutil status|grep -q disabled 2>/dev/null) != 0 ]; then
+			writelog "ERROR: Unable to restart mDNSResponder because SIP is enabled"
+			info_disable_sip
+	else
+			writelog "********** Flushing DNS Cache **********************************"
+			dscacheutil -flushcache &&  killall -HUP mDNSResponder  >>$LOGFILE 2>&1
+			writelog "********** Reloading mDNSResponder **********************************"
+			writelog "Reloading mDNSResponder"
+			launchctl unload -w /System/Library/LaunchDaemons/com.apple.mDNSResponder.plist
+			launchctl load -w /System/Library/LaunchDaemons/com.apple.mDNSResponder.plist
+	fi
+}
+###################################################################
+reset_routing() {
+# Reset routing table on OSX
+#
+# display current routing table
+
+writelog "**********************************************************"
+writelog "Flushing Routing Table"
+writelog "**********************************************************"
+for i in {0..4}; do
+  route -n flush >/dev/null 2>&1
+  sleep .2
+done
+
+clear_dns
+
+writelog "**********************************************************"
+writelog "Bringing interface $INTERFACE down..."
+writelog "**********************************************************"
+ifconfig $INTERFACE down
+sleep .5
+writelog "**********************************************************"
+writelog "Bringing interface $INTERFACE back up..."
+writelog "**********************************************************"
+ifconfig $INTERFACE  up
+sleep .5
+
+writelog "********** CURRENT ***************************************"
+netstat -rn >>$LOGFILE
+writelog "**********************************************************"
+
+}
+###################################################################
+checklog(){
+        if [ ! -f $LOGFILE ]; then
+                touch $LOGFILE 2>/dev/null
+        else
+
+		if [ $(stat -c %s $LOGFILE  >/dev/null 2>&1; echo $?) != 0 ]; then
+			local s=$(stat -f "%z"  $LOGFILE)
+		else
+			local s=$(stat -c %s $LOGFILE)
+		fi
+
+		if [ $s -gt $MAX_LOGSIZE ]; then
+			rm -f $LOGFILE  2>/dev/null 2>&1
+			writelog "LOGFILE > $MAX_LOGSIZE. Recreating..." 1
+		fi
+	fi
+}
+###################################################################
+usage() {
+                printline
+                echo ">[$SCRIPT]:  VPN Script to connect to the VPN [version $VERSION]"
+                printline
+                echo ">usage"
+                echo "  #$SCRIPT [start|stop|status|-c|-s|-d|-r|-v]"
+                echo "          start   Initialize connection to $COM_HOST VPN"
+                echo "          stop    Close connection to $COM_HOST VPN"
+                echo "          restart Restart VPN connection"
+                echo "          status  View the current VPN Connection Status"
+                echo "          -c      View your current Credentials"
+                echo "          -s      Tail the current $LOGFILE"
+                echo "                  to verify the current Connection Status"
+                echo "          -d      Enable Debug"
+                echo "          -r      Reset Network and Routing"
+                echo "          -v      Version info"
+                echo $LINE
+                exit
+}
+
+###################################################################
+###################################################################
+start_openconnect(){
+cat << EOF >/tmp/tvpn.openconnect.daemon
+#!/bin/bash
+# DEFINE GLOBAL VARIABLES
+source $CREDENTIALS
+debug=$debug
+CUSTOM_RESOLV=$CUSTOM_RESOLV
+SYSTEM_RESOLV=$SYSTEM_RESOLV
+DEFAULT_RESOLV=$DEFAULT_RESOLV
+COMMAND='$COMMAND'
+LOGFILE=$LOGFILE
+WAITLOG=$WAITLOG
+PIDFILE=$PIDFILE
+WAIT_TIME=20
+SLEEP_INTERVAL=5
+i=0
+c=0
+#--------------------------------------------------
+if [ ! -f $LOGFILE ];then
+ touch $LOGFILE
+fi
+#--------------------------------------------------
+EOF
+cat << 'EOF' >>/tmp/tvpn.openconnect.daemon
+#--------------------------------------------------
+get_date() {
+        REAL_DATETIME=`date '+%Y-%m-%dT%H:%M:%S'`
+	dt="[$REAL_DATETIME] $(hostname)"
+}
+#--------------------------------------------------
+echo "Connecting VPN to $COM_DOMAIN" >>$LOGFILE
+if [ ! -z $debug ]; then
+	CP=$COM_PASSWD
+else
+	CP="<mypassword>"
+fi
+echo "PASSWD: $CP|$COMMAND" >>$LOGFILE
+(echo  $COM_PASSWD|$COMMAND >>$LOGFILE 2>&1) &
+echo $!>$PIDFILE
+#--------------------------------------------------
+EOF
+
+chmod 755 /tmp/tvpn.openconnect.daemon
+(cd /tmp;echo |nohup bash -c "/tmp/tvpn.openconnect.daemon" nohup.out >/dev/null 2>&1) &
+}
+###################################################################
+# CREATING DAEMON TO WAIT AND THEN CHECK THE /etc/resolv.conf
+# AND VERIFY ALL DNS SERVERS LISTED ARE PINGABLE
+dns_check(){
+
+
+cat << EOF >/tmp/tvpn.daemon
+#!/bin/bash
+# DEFINE GLOBAL VARIABLES
+CUSTOM_RESOLV=$CUSTOM_RESOLV
+SYSTEM_RESOLV=$SYSTEM_RESOLV
+DEFAULT_RESOLV=$DEFAULT_RESOLV
+LOGFILE=$LOGFILE
+WAITLOG=$WAITLOG
+WAIT_TIME=20
+SLEEP_INTERVAL=5
+i=0
+c=0
+#--------------------------------------------------
+if [ ! -f $LOGFILE ];then
+ touch $LOGFILE
+fi
+#--------------------------------------------------
+EOF
+
+cat << 'EOF' >>/tmp/tvpn.daemon
+#--------------------------------------------------
+get_date() {
+        REAL_DATETIME=`date '+%Y-%m-%dT%H:%M:%S'`
+	dt="[$REAL_DATETIME] $(hostname)"
+}
+#--------------------------------------------------
+pingtest() {
+        (ping -c1 -q -W1 $1)>/dev/null 2>&1
+        if [ $? == 0 ]; then
+                echo 0
+        else
+                echo 1
+        fi
+}
+EOF
+cat << EOF >>/tmp/tvpn.daemon
+#--------------------------------------------------
+check_resolv() {
+#        cp $CUSTOM_RESOLV $SYSTEM_RESOLV &>/dev/null
+	/usr/local/bin/dnt
+}
+#--------------------------------------------------
+EOF
+cat << 'EOF' >>/tmp/tvpn.daemon
+while [ $i != 1 ]; do
+ get_date
+ if [ $(tail $LOGFILE| egrep -q "^Send|^Got"; echo $? ) == 0 ]; then
+  check_resolv
+  (printf "$dt DNS Check Complete. [tpvn.daemon] exiting successfully.\n" |tee -a  $LOGFILE $WAITLOG ) >/dev/null 2>&1
+EOF
+cat << EOF >>/tmp/tvpn.daemon
+  rm -f $WAITFILE 2>/dev/null
+EOF
+cat << 'EOF' >>/tmp/tvpn.daemon
+  (echo |nohup bash -c "sleep 1; rm -f /tmp/tvpn.daemon 2>/dev/null; rm -f nohup.out 2>/dev/null" nohup.out >/dev/null 2>&1) &
+  i=1
+ else
+  if [ ! -f $log ] && [ $c -gt 2 ]; then
+   i=1
+  fi
+  echo "$dt Waiting to confirm connection. Sleep #$c" >> $WAITLOG
+  sleep $SLEEP_INTERVAL
+  ((c++))
+ fi
+ if [ $c -gt $WAIT_TIME ]; then
+  i=1
+  (echo "$dt Exiting after [$c] tries." |tee -a $LOGFILE $WAITLOG )>/dev/null 2>&1
+ fi
+done
+EOF
+
+chmod 755 /tmp/tvpn.daemon
+(cd /tmp;echo |nohup bash -c "/tmp/tvpn.daemon" nohup.out >/dev/null 2>&1) &
+
+}
+###################################################################
+start_vpn() {
+	rm -f $WAITLOG >/dev/null 2>&1
+	if [ $($OPENC --version >/dev/null 2>&1; echo $?) != 0 ]; then
+		writelog "ERROR: openconnect not found. Exiting ..." 1
+		exit 1
+	fi
+	check_debug
+	if [ ! -z $test ]; then
+		echo "PASSWD: $COM_PASSWD |$COMMAND"
+	else
+		echo $LINE >> $LOGFILE
+		writelog "Initiating connection to VPN to $COM_DOMAIN"
+		start_openconnect
+		sleep .3
+		if [ -n $(cat $PIDFILE) ]; then
+			writelog "Started VPN as PID:$(cat $PIDFILE)"
+			dns_check
+			check_start_status
+			exit 0
+		else
+			writelog "ERROR: Problem Starting VPN. Exiting ..."
+			exit 1
+		fi
+	fi
+}
+###################################################################
+rmpid() {
+	rm -f $PIDFILE >/dev/null 2>&1
+}
+###################################################################
+check_running_process() {
+	pgrep -x "$1"|grep -q "[0-9]" 2>/dev/null
+	if [ $? == 0 ]; then
+		echo 0
+	else
+		echo 1
+	fi
+}
+###################################################################
+check_pid() {
+	if [ -f $PIDFILE ]; then
+		local pid="$(cat $PIDFILE)"
+		ps -p $pid >/dev/null 2>&1
+		if [ $? != 0 ]; then
+			rmpid
+			echo 1
+		else
+			echo 0
+		fi
+	else
+		local r=0
+		if [ $(check_running_process openconnect) ]; then
+			r=1
+		fi
+		if [ $(check_running_process "bash tvpn") ]; then
+			r=1
+		fi
+		echo $r
+	fi
+ }
+###################################################################
+stop_vpn(){
+	if [ $(check_pid) == 0 ]; then
+		if [ -f "$PIDFILE" ]; then
+			local pid=$(cat $PIDFILE)
+			local oc=$(pgrep -x openconnect)
+			writelog "[$SCRIPT] currently running under $pid. Stopping."
+			(kill -9 $pid $oc >/dev/null 2>&1)
+		fi
+		if [ $(check_running_process openconnect) ]; then
+			local sr=1
+			writelog "[$SCRIPT] shows openconnect is still running as $(pgrep -nx openconnect). Stopping"
+			killall -9 openconnect 2>/dev/null
+		fi
+		sleep .2
+		if [ $(check_running_process $SCRIPT) ]; then
+			writelog "[$SCRIPT] is still running as $(pgrep -nx $SCRIPT). Stopping."
+			killall -9 $SCRIPT 2>/dev/null
+		fi
+		rmpid
+
+	else
+		writelog "[$SCRIPT] not currently running."
+	fi
+}
+###################################################################
+verify_connect_status() {
+	if [ $(check_running_process openconnect) ] || [ $(tail -5 $LOGFILE |grep -q "^No work"; echo $?) == 0 ] || [ $(tail -5 $LOGFILE |grep -q "Keepalive"; echo $?) == 0 ] || [ $(tail -5 $LOGFILE |grep -q "Sent DTLS";echo $?) == 0 ]; then
+		echo 0
+	else
+		echo 1
+	fi
+}
+
+###################################################################
+verify_openconnect_connected() {
+ 	if [ $(tail -5 $LOGFILE |grep -q "^No work"; echo $?) == 0 ] || [ $(tail -5 $LOGFILE |grep -q "Keepalive"; echo $?) == 0 ] || [ $(tail -5 $LOGFILE |grep -q "Sent DTLS";echo $?) == 0 ]; then
+		echo 0
+	else
+		echo 1
+	fi
+}
+###################################################################
+check_start_status() {
+	local i=0
+	local c=1
+	local SLEEP_INTERVAL=2
+	local WAIT_TIME=20
+	while [ $i != 1 ]; do
+		get_date
+		nc=0
+
+		if [ $(check_running_process openconnect) ]; then
+			printf "$dtc [$SCRIPT] is connected and running as PID $(pgrep -x openconnect)\n"
+			i=1
+		fi
+
+		if [  $(verify_openconnect_connected) == 1 ] && [ $i == 0 ]; then
+			printf "$dtc Waiting for [$SCRIPT] to connect. Sleeping $SLEEP_INTERVAL. Try #$c\n"
+			nc=1
+			sleep $SLEEP_INTERVAL
+		fi
+		((c++))
+		if [ $c -gt $WAIT_TIME ] && [ $nc == 1 ]; then
+			printf "$dtc Exiting after [$c] tries.\n"
+			i=1
+		fi
+	done
+}
+###################################################################
+status_vpn() {
+	if [ $(check_running_process openconnect) != 0 ]; then
+		writelog "[$SCRIPT] is not currently running." 1
+		is_running=0
+		return 
+	fi
+
+	if [ $(check_running_process openconnect) == 0 ]; then
+		writelog "[$SCRIPT] is currently running as PID $(pgrep -x openconnect)" 1
+		is_running=1
+		return 
+	else
+		writelog "[$SCRIPT] is not currently running." 1
+		is_running=0
+		return 
+	fi
+
+	if [ ! -z "$(pgrep $SCRIPT)" ]; then
+		writelog "[$SCRIPT] is currently running as PID $(pgrep -x openconnect)" 1
+		is_running=1
+		return 
+	fi
+
+}
+###################################################################
+###################################################################
+###################################################################
+###################################################################
+###################################################################
+###################################################################
+###################################################################
+###################################################################
+###################################################################
+# MAIN SECTION TO PARSE USER ARGUMENTS
+###################################################################
+###################################################################
+###################################################################
+###################################################################
+###################################################################
+if [ $# == 0 ]; then
+	usage
+fi
+checklog
+for arg in "$@" ; do
+        case "$arg" in
+                start)  start=1;;
+                restart)   restart=1;;
+                stop)   stop=1;;
+                status) status=1;;
+                "-s"|"-t"|t|ta|tai|tail) vtail=1;;
+                "-d")  debug=1;;
+                "-r")  reset_routing;rr=1;;
+                "test") test=1; start=1;;
+                "-v") echo "$SCRIPT v$VERSION";exit 0;;
+                "-c") check_credentials;exit 0;;
+                *) usage;;
+        esac
+done
+
+
+if [ ! -z $start ] && [ ! -z $stop ]; then
+  echo "ERROR: Cannot use 'start' and 'stop' you IdJut!"
+  usage
+fi
+
+if [ ! -z $status ]; then
+  status_vpn
+  exit
+fi
+
+if [ ! -z $start ]; then
+  status_vpn
+  if [ $is_running == 0 ]; then
+	  start_vpn
+  fi
+  exit
+fi
+
+if [ ! -z $restart ]; then
+	stop_vpn
+	start_vpn
+	exit
+fi
+
+if [ ! -z $stop ]; then
+  stop_vpn
+  /usr/local/bin/dnh
+  exit
+fi
+
+if [ ! -z $vtail ]; then
+  tail -f $LOGFILE
+  exit
+fi
+
+if [ ! -z $rr ]; then
+  writelog "Reset Routing ..."
+fi
+###################################################################
+# END
+###################################################################
