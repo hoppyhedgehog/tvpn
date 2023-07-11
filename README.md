@@ -4,9 +4,12 @@ TVPN is a VPNC Wrapper Script that allows you to connect to your Cisco VPN using
 
 I created this for use on MAC OSX Monterey (12.6)+, but it could also be used on Linux.
 
+# GITHUB URL
+https://github.com/hoppyhedgehog/tvpn
+
 
 # NEW FEATURES
-Version 5.0 includs major changes:
+Version 5.0 includes major changes:
 - Credentials file is /etc/.credentials
 - Paswords are now encrypted and decrypted (when needed)
 - There is a "setup" option. Setup builds credentials file which caches username/domain/authgroup/vpn server/DNS info/etc.
@@ -24,10 +27,6 @@ If you have tvpn v4.1 or earlier here are details on files that should be copied
 **.tvpn-credentials** 
 - The /etc/vpnc/.tvpn-credentials file was renamed to /etc/vpnc/.credentials
 
-
-# FILES
-**tvpn** 
-- The main script which should be copied to /usr/local/bin
 **brew-setup.sh**
 - You should re-download brew-setup.sh, although if you have tvpn installed you do NOT have to re-run it.
 
@@ -36,6 +35,7 @@ If you have tvpn v4.1 or earlier here are details on files that should be copied
 
 **vpnc-script**
 - Download and replace file vpnc-script. It was changed from a customized file to the default file [download it from here](https://gitlab.com/openconnect/vpnc-scripts/raw/master/vpnc-script)
+
 
 
 
@@ -228,35 +228,6 @@ If not, set the path
 ```
 export PATH=/usr/local/bin:$PATH
 ```
-
-
-# Identify your preferred ACTIVE network interface:
-
-- MAC OSX
-```
-# scutil --nwi|awk 'BEGIN {s=0} $0 ~ /^IPv4/ {s=1;next} s==1 && $0 ~ /flags/ {intf=$1;next} s==1 && $1 ~ /address/ {ip=$NF; print intf,ip} $1 ~ /REACH/{exit}'
-```
-[^note]:
-EXAMPLE OUTPUT (Single Interface)
-```
-en9 192.168.1.88
-```
-
-[^note]:
-EXAMPLE OUTPUT (Multiple Interface)
-```
-en9 192.168.1.88
-en0 192.168.1.13
-```
-
-- LINUX
-```
-## ip -o -f inet addr show
-1: lo    inet 127.0.0.1/8 scope host lo\       valid_lft forever preferred_lft forever
-2: ens192    inet 172.16.242.51/20 brd 172.16.255.255 scope global noprefixroute ens192\       valid_lft forever preferred_lft forever
-3: virbr0    inet 192.168.122.1/24 brd 192.168.122.255 scope global virbr0\       valid_lft forever preferred_lft forever
-```
-
 
 
 # Create Directory /etc/vpnc
@@ -520,5 +491,37 @@ If there is a need to monitor the initial startup of tvpn there is also file tvp
 [2022-10-03T10:54:01] benmacbook Waiting to confirm connection. Sleep #4
 [2022-10-03T10:54:06] benmacbook Waiting to confirm connection. Sleep #5
 [2022-10-03T10:54:11] benmacbook DNS Check Complete. [tpvn.daemon] exiting successfully.
+```
+
+
+# APPENDIX
+
+## A - Tips
+
+#### Identify your preferred ACTIVE network interface:
+
+- MAC OSX
+```
+# scutil --nwi|awk 'BEGIN {s=0} $0 ~ /^IPv4/ {s=1;next} s==1 && $0 ~ /flags/ {intf=$1;next} s==1 && $1 ~ /address/ {ip=$NF; print intf,ip} $1 ~ /REACH/{exit}'
+```
+[^note]:
+EXAMPLE OUTPUT (Single Interface)
+```
+en9 192.168.1.88
+```
+
+[^note]:
+EXAMPLE OUTPUT (Multiple Interface)
+```
+en9 192.168.1.88
+en0 192.168.1.13
+```
+
+- LINUX
+```
+## ip -o -f inet addr show
+1: lo    inet 127.0.0.1/8 scope host lo\       valid_lft forever preferred_lft forever
+2: ens192    inet 172.16.242.51/20 brd 172.16.255.255 scope global noprefixroute ens192\       valid_lft forever preferred_lft forever
+3: virbr0    inet 192.168.122.1/24 brd 192.168.122.255 scope global virbr0\       valid_lft forever preferred_lft forever
 ```
 
