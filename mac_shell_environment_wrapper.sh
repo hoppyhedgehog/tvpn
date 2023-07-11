@@ -154,7 +154,7 @@ export HISTIGNORE=?:??
 export HISTIGNORE=
 
 #################################################################
-export PATH=/usr/local/bin:/usr/local/sbin:$PATH
+export PATH=/usr/local/bin:/usr/local/sbin:$PATH:/etc/vpnc
 #################################################################
 # silence MAC Shell warning
 export BASH_SILENCE_DEPRECATION_WARNING=1

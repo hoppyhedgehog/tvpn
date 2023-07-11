@@ -807,7 +807,7 @@ validate_ipaddress () {
 }
 ############################################################
 build_reset_dns() {
-cat<< 'EOF' > /usr/local/bin/tvpn-flush-dns
+cat<< 'EOF' > /etc/vpnc/tvpn-flush-dns
 #!/bin/bash
 RED='\033[0;31m'
 NORMAL='\033[0m' # No Color
@@ -837,7 +837,7 @@ killall -9 mDNSResponder mDNSResponderHelper
 sleep .3
 writelog "Done"
 EOF
-chmod 755  $RESET_DNS
+chmod 755  /etc/vpnc/tvpn-flush-dns
 }
 ############################################################
 build_reset_file() {
@@ -908,25 +908,29 @@ fi
 if [ $search == 1 ]; then
         writelog "Setting $NAME Search Domains for Interface [$iface] Service [$service] to [$searchlist]"
 	if [ $machine == "Mac" ]; then
-	        echo "networksetup -setsearchdomains \"$service\" $searchlist"
+	        writelog "networksetup -setsearchdomains \"$service\" $searchlist"
+	        networksetup -setsearchdomains "$service" $searchlist
 	else
+		writelog "search $searchlist >/etc/resolv.conf"
 		echo "search $searchlist" >/etc/resolv.conf
 	fi
 fi
 if [ $slist == 1 ]; then
         writelog "Setting $NAME DNS for Interface [$iface] Service [$service] to [$servlist]"
 	if [ $machine == "Mac" ]; then
-       		echo "networksetup -setdnsservers \"$service\" $servlist"
+       		writelog "networksetup -setdnsservers \"$service\" $servlist"
+       		networksetup -setdnsservers "$service" $servlist
 	else
         writelog "Setting $NAME DNS for Interface [$iface] Service [$service] to [$servlist]"
 		for i in $servlist; do
+			writelog "nameserver $i >>/etc/resolv.conf"
 			echo "nameserver $i" >>/etc/resolv.conf
 		done
 	fi
 fi
-EOF
-cat << EOF >>/tmp/.resetfile
-eval $RESET_DNS
+sleep .2
+writelog "Beginning /etc/vpnc/tvpn-flush-dns"
+/etc/vpnc/tvpn-flush-dns
 EOF
 
 if [ $1 == 1 ]; then
@@ -1166,9 +1170,9 @@ fi
 begin_setup() {
 ###################################################################
 reset=
-DNV=/usr/local/bin//tvpn-reset-dns-vpn
-DNH=/usr/local/bin/tvpn-reset-dns-home
-RESET_DNS=/usr/local/bin/tvpn-flush-dns
+DNV=/etc/vpnc/tvpn-reset-dns-vpn
+DNH=/etc/vpnc/tvpn-reset-dns-home
+RESET_DNS=/etc/vpnc/tvpn-flush-dns
 ############################################################
 RED='\033[0;31m'
 NORMAL='\033[0m' # No Color
