@@ -27,7 +27,7 @@ LOGDATE_TEMP=$(date '+%Y%m%d.%H%M%S.%N')
 DATETIME=$(date '+%Y%m%dT%H%M%S')
 LOGDIR="$HOME/logs/tvpn"
 WAITLOG="$LOGDIR/${SCRIPT}.wait"
-LOGFILE="$LOGDIR/${SCRIPT}.${LD}.log"
+LOGFILE="$LOGDIR/${SCRIPT}-${LD}.log"
 PIDFILE=/var/run/$SCRIPT.pid
 MAX_LOGSIZE=25000000 #25M
 HOMEBREW_URL="https://raw.githubusercontent.com/Homebrew/install/master/install"
@@ -369,7 +369,7 @@ checklog(){
 		fi
 
 		if [ $s -gt $MAX_LOGSIZE ]; then
-			rm -f $LOGFILE  2>/dev/null 2>&1
+			printf ""> $LOGFILE  2>/dev/null 2>&1
 			writelog "LOGFILE > $MAX_LOGSIZE. Recreating..." 1
 		fi
 	fi
@@ -424,8 +424,6 @@ WAITLOG=$WAITLOG
 PIDFILE=$PIDFILE
 WAIT_TIME=20
 SLEEP_INTERVAL=5
-i=0
-c=0
 #--------------------------------------------------
 if [ ! -f $LOGFILE ];then
  touch $LOGFILE
@@ -441,22 +439,22 @@ get_date() {
 #--------------------------------------------------
 decrypt_password() {
         local ENCRYPTED_PASSWORD=$1
-        echo -e "$ENCRYPTED_PASSWORD"|openssl enc -aes-256-cbc -a -d -pass pass:IPAMaster
+        echo -e "$ENCRYPTED_PASSWORD"|openssl enc -aes-256-cbc -a -d -pass pass:IPAMaster 2>/dev/null
 }
 
 #--------------------------------------------------
-echo "Connecting VPN to $COM_DOMAIN" >>$LOGFILE
+get_date
+echo -e "$dt Connecting VPN to $COM_DOMAIN" >>$LOGFILE
 UNENCRYPTED_PASSWD=$(decrypt_password $COM_PASSWD)
 if [ !  -z $debug ]; then
 	CP=$UNENCRYPTED_PASSWD
-	echo "#echo -e $CP|$COMMAND" |tee -a $LOGFILE
 else
 	CP="<mypassword>"
-	echo "# echo -e $CP|$COMMAND" |tee -a $LOGFILE
 fi
 if [ -z "$UNENCRYPTED_PASSWD" ]; then
-	echo "ERROR: Problem decrypting Password $COM_PASSWD" |tee -a $LOGFILE
+	echo -e "$dt ERROR: Problem decrypting Password $COM_PASSWD" |tee -a $LOGFILE
 else
+	echo -e "$dt # echo -e $CP|$COMMAND" |tee -a $LOGFILE
 	(echo  -e "$UNENCRYPTED_PASSWD"|$COMMAND >>$LOGFILE 2>&1) &
 	echo $!>$PIDFILE
 fi
@@ -464,7 +462,8 @@ fi
 EOF
 
 chmod 755 /tmp/tvpn.openconnect.daemon
-(cd /tmp;echo |nohup bash -c "/tmp/tvpn.openconnect.daemon" nohup.out >/dev/null 2>&1) &
+echo -e "$dt Starting /tmp/tvpn.openconnect.daemon" >> $LOGFILE
+(cd /tmp; echo |nohup bash -c "/tmp/tvpn.openconnect.daemon" nohup.out >/dev/null 2>&1) &
 }
 ###################################################################
 # CREATING DAEMON TO WAIT AND THEN CHECK THE /etc/resolv.conf
@@ -482,6 +481,7 @@ LOGFILE=$LOGFILE
 WAITLOG=$WAITLOG
 WAIT_TIME=20
 SLEEP_INTERVAL=5
+DNV=$DNV
 i=0
 c=0
 #--------------------------------------------------
@@ -507,19 +507,13 @@ pingtest() {
         fi
 }
 EOF
-cat << EOF >>/tmp/tvpn.daemon
-#--------------------------------------------------
-check_resolv() {
-	eval $DNV
-}
-#--------------------------------------------------
-EOF
+
 cat << 'EOF' >>/tmp/tvpn.daemon
 while [ $i != 1 ]; do
  get_date
  if [ $(tail $LOGFILE| egrep -q "^Send|^Got"; echo $? ) == 0 ]; then
-  check_resolv
-  (printf "$dt DNS Check Complete. [tpvn.daemon] exiting successfully.\n" |tee -a  $LOGFILE $WAITLOG ) >/dev/null 2>&1
+	eval $DNV|tee -a $WAITLOG
+        (printf "$dt DNS Check Complete. [tpvn.daemon] exiting successfully.\n" |tee -a  $LOGFILE $WAITLOG ) >/dev/null 2>&1
 EOF
 cat << EOF >>/tmp/tvpn.daemon
   rm -f $WAITFILE 2>/dev/null
@@ -543,6 +537,8 @@ done
 EOF
 
 chmod 755 /tmp/tvpn.daemon
+get_date
+echo -e "$dt Starting /tmp/tvpn.daemon" >>$LOGFILE
 (cd /tmp;echo |nohup bash -c "/tmp/tvpn.daemon" nohup.out >/dev/null 2>&1) &
 
 }
@@ -629,6 +625,7 @@ stop_vpn(){
 			killall -9 $SCRIPT 2>/dev/null
 		fi
 		rmpid
+		$DNH
 
 	else
 		writelog "[$SCRIPT] not currently running."
@@ -757,20 +754,20 @@ getdomain() {
 }
 ############################################################
 encrypt_password(){
-	PASS=$(echo $1|openssl enc -aes-256-cbc -a -pass pass:IPAMaster)
+	PASS=$(echo -e "$1"|openssl enc -aes-256-cbc -a -pass pass:IPAMaster 2>/dev/null)
         echo $PASS
 }
 ############################################################
 decrypt_password() {
         local ENCRYPTED_PASSWORD=$1
-        echo -e "$ENCRYPTED_PASSWORD"|openssl enc -aes-256-cbc -a -d -pass pass:IPAMaster
+        echo -e "$ENCRYPTED_PASSWORD"|openssl enc -aes-256-cbc -a -d -pass pass:IPAMaster 2>/dev/null
 }
 
 ############################################################
 setpass() {
         local pass="$1"
         temp_pass=$(echo -e "$pass"|awk '{gsub(/[[:blank:]]/,"");print}')
-        ENCRYPTED_PASSWORD=$(encrypt_password $temp_pass)
+        ENCRYPTED_PASSWORD=$(encrypt_password $temp_pass 2>/dev/null)
         writelogo "Writing Encrypted Password [$ENCRYPTED_PASSWORD]--> $CREDENTIALS" 
 	#echo "# YOUR VPN PASSWORD (ENCRYPTED)" >>$CREDENTIALS
         echo -e "COM_PASSWD='$ENCRYPTED_PASSWORD'">>$CREDENTIALS
@@ -911,7 +908,6 @@ if [ $search == 1 ]; then
 	        writelog "networksetup -setsearchdomains \"$service\" $searchlist"
 	        networksetup -setsearchdomains "$service" $searchlist
 	else
-		writelog "search $searchlist >/etc/resolv.conf"
 		echo "search $searchlist" >/etc/resolv.conf
 	fi
 fi
@@ -923,13 +919,12 @@ if [ $slist == 1 ]; then
 	else
         writelog "Setting $NAME DNS for Interface [$iface] Service [$service] to [$servlist]"
 		for i in $servlist; do
-			writelog "nameserver $i >>/etc/resolv.conf"
 			echo "nameserver $i" >>/etc/resolv.conf
 		done
 	fi
 fi
-sleep .2
-writelog "Beginning /etc/vpnc/tvpn-flush-dns"
+sleep 5
+writelog "Sleeping 5 Seconds then flushing DNS"
 /etc/vpnc/tvpn-flush-dns
 EOF
 
@@ -964,8 +959,9 @@ getdns() {
 		writelog "ENTER BLANK OR \".\" TO EXIT"
                 while [ -z $stop ]; do
                         get_date
-                        printf "$dtc Enter your $CONN DNS Server IP #$dc>"
-                        read dns
+                        printf "$dtc Enter your $CONN DNS Server IP #$dc> "
+                        read dns_ans
+			dns=$(echo -e "$dns_ans"|awk '{gsub(/[[:blank:]]/,"");print}')
 			if [ -z $dns ] || [ $dns == "." ]; then
 				stop=1
 			elif [ $(validate_ipaddress $dns) == 0 ]; then
@@ -984,11 +980,12 @@ getdns() {
 	dc=1
         if  [  $resetarg == 2 ]; then
         #        echo "# LIST OF $CONN DNS DOMAIN SEARCH ORDER" >>$CREDENTIALS
+		writelog "$THINLINE"
                 writelog "Gathering a list of $CONN DNS Servers to search"
                 writelog "ENTER BLANK OR \".\" TO EXIT"
                 while [ -z $stop ]; do
                         get_date
-                        printf "$dtc Enter your $CONN DNS Domain Search Server Name #$dc>"
+                        printf "$dtc Enter your $CONN DNS Domain Search Server Name #$dc> "
                         read answer
                         dns=$(echo $answer|tr "[:upper:]" "[:lower:]"|sed 's/^[ \t]*//;s/[ \t]*$//')
                         if [ -z $dns ] || [ $dns == "." ]; then
@@ -1258,7 +1255,11 @@ fi
 if [ ! -f $RESET_DNS ] || [ ! -z $reset_dns_script ]; then
 	build_reset_dns
 fi
-	view_creds
+if [ ! -z $do_setup ]; then
+	writelog "Setup Complete: Results:"
+	writelog "$THINLINE"
+fi
+view_creds
 
 
 }
@@ -1294,7 +1295,7 @@ for (( i = 0; i < ${#args[*]}; ++ i )); do
                 restart)   restart=1;;
                 stop)   stop=1;;
                 status) status=1;;
-                setup) reset_all=1;begin_setup;;
+                setup) reset_all=1;do_setup=1;begin_setup;;
 		"-b" ) bd=1;;
                 "-s"|t|ta|tai|tail) vtail=1;;
                 "-d")  debug=1;;
@@ -1366,7 +1367,6 @@ fi
 
 if [ ! -z $stop ]; then
   stop_vpn
-  $DNH
   exit
 fi
 
