@@ -5,7 +5,7 @@
 # INSTALL LOCATION: 	/usr/local/bin
 # AUTHOR: 		ben@datastorageguy.com
 ###################################################################
-VERSION=5.1
+VERSION=5.0
 ###################################################################
 # Add Line Numbers during 'set -x' debug
 ###################################################################
@@ -39,10 +39,6 @@ MIN_PASSWORD_LENGTH=3
 MIN_DOMAIN_LENGTH=2
 MIN_GROUP_LENGTH=2
 ###################################################################
-DNV=/etc/vpnc/tvpn-reset-dns-vpn
-DNH=/etc/vpnc/tvpn-reset-dns-home
-RESET_DNS=/etc/vpnc/tvpn-flush-dns
-###################################################################
 # Create Log Directory if it does not exist
 ###################################################################
 if [ ! -d $LOGDIR ]; then
@@ -57,11 +53,11 @@ cleanfile() {
 ###################################################################
 unameOut="$(uname -s)"
 case "${unameOut}" in
-    Linux*)     OPERATING_SYSTEM=Linux
+    Linux*)     machine=Linux
 	    	ETC=/etc
 		SYSTEM_RESOLV=/etc/resolv.conf
 		;;
-    Darwin*)    OPERATING_SYSTEM=Mac
+    Darwin*)    machine=Mac
 	    	if [ -L /etc ]; then
 	    		ETC=/private/etc
 		else
@@ -69,7 +65,7 @@ case "${unameOut}" in
 		fi
 		SYSTEM_RESOLV=/var/run/resolv.conf
 		;;
-    *)          OPERATING_SYSTEM="UNKNOWN:${unameOut}"
+    *)          machine="UNKNOWN:${unameOut}"
 	    	ETC=/etc
 		SYSTEM_RESOLV=/etc/resolv.conf
 		;;
@@ -77,9 +73,9 @@ esac
 ###################################################################
 CREDENTIALS=$ETC/vpnc/.credentials
 ###################################################################
-# Verify that the local path contains the correct PATHs 
+# Verify that the local path contains the correct PATHs
 ###################################################################
-check_path() { 
+check_path() {
 	for tpath in "/bin" "/sbin" "/usr/local/bin" ; do
 		if [ $(echo "$PATH"|grep -w -q "$tpath"; echo $?) != 0 ]; then
 			export PATH=$tpath:$PATH
@@ -292,7 +288,7 @@ reset_all_routing() {
 ###################################################################
 info_disable_sip() {
 	printline
-	cat << EOF 
+	cat << EOF
 To verify SIP:
 
 # csrutil status
@@ -384,7 +380,7 @@ usage() {
                 echo ">[$SCRIPT]:  VPN Script to connect to the VPN [version $VERSION]"
                 printline
                 echo ">usage"
-                echo "  # $SCRIPT [start|stop|status|restart|setup|-s|-d|-p|-r <arg>|-n|-v]"
+                echo "  # $SCRIPT [start|stop|status|restart|setup|-s|-d|-p|-r <arg>|-v]"
                 echo "          start   Initialize connection to $COM_HOST VPN"
                 echo "          stop    Close connection to $COM_HOST VPN"
                 echo "          restart Restart VPN connection"
@@ -394,7 +390,6 @@ usage() {
                 echo "          -s      Tail the current $LOGFILE"
                 echo "                  to verify the current Connection Status"
                 echo "          -d      Enable Debug"
-                echo "          -n      Show all available network interfaces and services"
 		echo "          -p      Print Credentials (password decrypted)"
                 echo "          -r <arg>"
 		echo "			all	- Reset Everything and re-run Setup"
@@ -685,23 +680,23 @@ status_vpn() {
 	if [ $(check_running_process openconnect) != 0 ]; then
 		writelog "[$SCRIPT] is not currently running." 1
 		is_running=0
-		return 
+		return
 	fi
 
 	if [ $(check_running_process openconnect) == 0 ]; then
 		writelog "[$SCRIPT] is currently running as PID $(pgrep -x openconnect)" 1
 		is_running=1
-		return 
+		return
 	else
 		writelog "[$SCRIPT] is not currently running." 1
 		is_running=0
-		return 
+		return
 	fi
 
 	if [ ! -z "$(pgrep $SCRIPT)" ]; then
 		writelog "[$SCRIPT] is currently running as PID $(pgrep -x openconnect)" 1
 		is_running=1
-		return 
+		return
 	fi
 
 }
@@ -773,7 +768,7 @@ setpass() {
         local pass="$1"
         temp_pass=$(echo -e "$pass"|awk '{gsub(/[[:blank:]]/,"");print}')
         ENCRYPTED_PASSWORD=$(encrypt_password $temp_pass 2>/dev/null)
-        writelogo "Writing Encrypted Password [$ENCRYPTED_PASSWORD]--> $CREDENTIALS" 
+        writelogo "Writing Encrypted Password [$ENCRYPTED_PASSWORD]--> $CREDENTIALS"
 	#echo "# YOUR VPN PASSWORD (ENCRYPTED)" >>$CREDENTIALS
         echo -e "COM_PASSWD='$ENCRYPTED_PASSWORD'">>$CREDENTIALS
 }
@@ -862,16 +857,12 @@ else
 fi
 
 cat << EOF >>/tmp/.resetfile
-#--------------------------------------
-# GLOBAL VARIABLES
-#--------------------------------------
-OPERATING_SYSTEM=$OPERATING_SYSTEM
-NAME=$n
-INT=INTERFACE
-SERVICE=NWSERVICE
-NAMESERVER=${n}_NAMESERVER
-SEARCH=${n}_SEARCH
-#--------------------------------------
+	OS=$machine
+	NAME=$n
+	INT=INTERFACE
+	SERVICE=NWSERVICE
+	NAMESERVER=${NAME}_NAMESERVER
+	SEARCH=${NAME}_SEARCH
 EOF
 cat << 'EOF' >>/tmp/.resetfile
 get_date() {
@@ -913,7 +904,7 @@ fi
 
 if [ $search == 1 ]; then
         writelog "Setting $NAME Search Domains for Interface [$iface] Service [$service] to [$searchlist]"
-	if [ $OPERATING_SYSTEM == "Mac" ]; then
+	if [ $machine == "Mac" ]; then
 	        writelog "networksetup -setsearchdomains \"$service\" $searchlist"
 	        networksetup -setsearchdomains "$service" $searchlist
 	else
@@ -922,7 +913,7 @@ if [ $search == 1 ]; then
 fi
 if [ $slist == 1 ]; then
         writelog "Setting $NAME DNS for Interface [$iface] Service [$service] to [$servlist]"
-	if [ $OPERATING_SYSTEM == "Mac" ]; then
+	if [ $machine == "Mac" ]; then
        		writelog "networksetup -setdnsservers \"$service\" $servlist"
        		networksetup -setdnsservers "$service" $servlist
 	else
@@ -938,12 +929,10 @@ writelog "Sleeping 5 Seconds then flushing DNS"
 EOF
 
 if [ $1 == 1 ]; then
-	cp -pf $FILE $DNV &>/dev/null
+	mv -f $FILE $DNV &>/dev/null
 	chmod 755 $DNV &>/dev/null
-	cp $FILE /tmp/resetfile1
 else
-	cp -pf  $FILE $DNH &>/dev/null
-	cp $FILE /tmp/resetfile2
+	mv -f $FILE $DNH &>/dev/null
 	chmod 755 $DNH &>/dev/null
 fi
 
@@ -1116,7 +1105,8 @@ clear_creds(){
 	rm -f $stub &>/dev/null
 }
 ############################################################
-get_interface_info_arrays() {
+get_interface_info() {
+
 INETARR=($(ifconfig -a |sed -n '/^en[0-9].*flags/, /status/p' |awk   '$0 ~ /flags/ {l1=$1;l2="";l3=""} $0 ~ /ether/ {l2=$0} $0 ~ /inet / {l3=$2} $0 ~ /status/ {
         if ($0 ~ /status/ && $0 ~ /active/ && $0 !~ /inactive/) {
 print l3
@@ -1128,20 +1118,6 @@ INTARR=($(ifconfig -a |sed -n '/^en[0-9].*flags/, /status/p' |awk   '$0 ~ /flags
                 printf z
         }
 }'))
-}
-############################################################
-show_network() {
-	get_interface_info_arrays
-	writelog "Found the following Network Interfaces"
-	for i in "${!INETARR[@]}"; do
-			service=$(networksetup -listnetworkserviceorder | grep -w "${INTARR[$i]}" -B1 | grep -v -w "${INTARR[$i]}" | cut -d ')' -f2 | sed 's/^[ ]*//;s/[ ]*$//')
-			writelog "FOUND INTERFACE=${INTARR[$i]} IP=${INETARR[$i]} NWSERVICE='${service}'"
-	done
-}
-############################################################
-get_interface_info() {
-
-get_interface_info_arrays
 
 if [ ${#INETARR[@]} == 0 ]; then
 	writelog "No Active Interfaces found"
@@ -1323,7 +1299,7 @@ for (( i = 0; i < ${#args[*]}; ++ i )); do
 		"-b" ) bd=1;;
                 "-s"|t|ta|tai|tail) vtail=1;;
                 "-d")  debug=1;;
-                "-r")  
+                "-r")
 				case "$next_arg" in
 					route)	reset_routing;rr=1;;
 					all)	reset_all=1;do_reset=1;;
@@ -1339,13 +1315,12 @@ for (( i = 0; i < ${#args[*]}; ++ i )); do
 				esac
 				arg_check=1
 				;;
-		"-n") print_network=1;;
 		"-R") reset_password=1;begin_setup;;
                 "-p")  printall=1;;
                 "test"|"-t") test=1; start=1;;
                 "-v") echo "$SCRIPT v$VERSION";exit 0;;
                 "-c") check_credentials;exit 0;;
-                *) 
+                *)
 			if [ $arg_check == 0 ]; then
 				usage
 			fi
@@ -1394,10 +1369,7 @@ if [ ! -z $stop ]; then
   stop_vpn
   exit
 fi
-if [ ! -z $print_network ]; then
-	show_network
-	exit
-fi
+
 if [ ! -z $vtail ]; then
   tail -f $LOGFILE
   exit

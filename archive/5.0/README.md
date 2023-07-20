@@ -9,10 +9,12 @@ https://github.com/hoppyhedgehog/tvpn
 
 
 # NEW FEATURES
-Version 5.1 includes major changes:
-- Fixed /etc/vpnc/tvpn-reset-dns-xx scripts because there was an error and the dns was not being reset and thus when on the VPN you may have to manually run it in order to be able to ping systems on the vpn
-- Added the ability to display network interfaces via 'tvpn -n'
-
+Version 5.0 includes major changes:
+- Credentials file is /etc/.credentials
+- Paswords are now encrypted and decrypted (when needed)
+- There is a "setup" option. Setup builds credentials file which caches username/domain/authgroup/vpn server/DNS info/etc.
+- There are options to reset the individual options within the credentials.
+- The reset scripts to modify dns when on VPN vs HOME are renamed to /usr/local/bin/tvpn-reset-dns-vpn and /usr/local/bin/tvpn-reset-dns-home
 
 # UPGRADING
 
@@ -249,19 +251,18 @@ mkdir /etc/vpnc
 Setup TVPN by viewing the script usage.
 ```
 ================================================================
->[tvpn]:  VPN Script to connect to the VPN [version 5.1]
+>[tvpn]:  VPN Script to connect to the VPN [version 5.0]
 ================================================================
 >usage
-  # tvpn [start|stop|status|restart|setup|-s|-d|-p|-r <arg>|-n|-v]
+  # tvpn [start|stop|status|restart|setup|-s|-d|-p|-r <arg>|-v]
           start   Initialize connection to  VPN
           stop    Close connection to  VPN
           restart Restart VPN connection
           status  View the current VPN Connection Status
           setup   Setup and configure TVPN
-          -s      Tail the current /Users/bpatridge/logs/tvpn/tvpn-202307.log
+          -s      Tail the current /Users/bpatridge/logs/tvpn/tvpn.202307.log
                   to verify the current Connection Status
           -d      Enable Debug
-          -n      Show all available network interfaces and services
           -p      Print Credentials (password decrypted)
           -r <arg>
                         all     - Reset Everything and re-run Setup
@@ -276,16 +277,7 @@ Setup TVPN by viewing the script usage.
                         ld      - Reset LOCAL  DNS Servers
           -v      Version info
 ================================================================
-
 ```
-
-View and display your network interfaces via
-```
-# tvpn -n
-[2023-07-20T10:53:28] benmacbook Found the following Network Interfaces
-[2023-07-20T10:53:28] benmacbook FOUND INTERFACE=en0 IP=192.168.5.82 NWSERVICE='Wi-Fi'
-```
-
 
 Then you may issue setup
 
@@ -509,13 +501,6 @@ If there is a need to monitor the initial startup of tvpn there is also file tvp
 #### Identify your preferred ACTIVE network interface:
 
 - MAC OSX
-```
-# tvpn -n
-[2023-07-20T10:53:28] benmacbook Found the following Network Interfaces
-[2023-07-20T10:53:28] benmacbook FOUND INTERFACE=en0 IP=192.168.5.82 NWSERVICE='Wi-Fi'
-```
-
-Or you man manually use scutil to display the interfaxces
 ```
 # scutil --nwi|awk 'BEGIN {s=0} $0 ~ /^IPv4/ {s=1;next} s==1 && $0 ~ /flags/ {intf=$1;next} s==1 && $1 ~ /address/ {ip=$NF; print intf,ip} $1 ~ /REACH/{exit}'
 ```
